@@ -1,0 +1,4 @@
+**/secrets/**.conf
+
+**/__pycache__/**
+**/*.log
