@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # copy the source code
 COPY src ./src
 
+# copy the data
+COPY data ./data
+
 # make sure logs are unbuffered
 ENV PYTHON_UNBUFFERED=1
 

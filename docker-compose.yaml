@@ -8,7 +8,6 @@ services: # define services
       - bot-token
       - bot-config
     environment: # pass location of secrets to the container
-      FLAMEBRINGER_TOKEN_FILE: /run/secrets/bot-token
       FLAMEBRINGER_CONFIG_FILE: /run/secrets/bot-config
 
 secrets:
