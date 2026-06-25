@@ -35,16 +35,18 @@ bot = discord.Bot()  # create a bot instance
 logger.debug("Bot object created")
 
 async def _send_image(ctx: discord.ApplicationContext, header:bool):
-    await ctx.defer()
+    await ctx.defer(invisible=True)
     if header:
         with open(image_paths["header"], "rb") as image:
             file = discord.File(fp=image, filename="fw_header.png", description="Seal of the Office of the Flamewarden")
     else:
         with open(image_paths["footer"], "rb") as image:
             file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
-    await ctx.respond(file=file)
+    await ctx.delete()
+    await ctx.channel.send(file=file)
 
 async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: bool, duration: int):
+    await ctx.defer(invisible=True)
     if "the" in name.lower():
         filler = " "
     else:
@@ -59,6 +61,7 @@ async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: 
         discord.PollAnswer(text="Abstain", emoji="🔄")
     ]
     poll = discord.Poll(question=title, answers=options, duration=duration)
+    await ctx.delete()
     await ctx.respond(poll=poll)
 
 @bot.event
