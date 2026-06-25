@@ -14,4 +14,4 @@ secrets:
   bot-token:
     file: ./conf/secrets/token.conf
   bot-config:
-    file: ./conf/bot.conf
+    file: ./conf/bot.yaml
