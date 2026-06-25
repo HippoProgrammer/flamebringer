@@ -82,7 +82,6 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 @halls.command(name="vote", description="Create a poll for voting in the Halls of Solaris")
 @discord.option("name",description="The name of the proposal going to vote",type=discord.SlashCommandOptionType.string)
 @discord.option("treaty",description="Is the proposal a treaty?",type=discord.SlashCommandOptionType.boolean)
-#@discord.option("the",description="Does the proposal's name have a 'the' in it?",type=discord.SlashCommandOptionType.boolean)
 @discord.option("duration",description="Duration of the poll in hours (default: 48h)",type=discord.SlashCommandOptionType.integer,min_value=poll_durations["min"],max_value=poll_durations["max"],default=poll_durations["default"])
 async def vote(ctx: discord.ApplicationContext, name: str, treaty: bool, duration: int):
     permitted = False
