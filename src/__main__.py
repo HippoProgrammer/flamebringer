@@ -45,6 +45,74 @@ async def _send_image(ctx: discord.ApplicationContext, header:bool):
     await ctx.delete()
     await ctx.channel.send(file=file)
 
+async def _send_vote_text(ctx: discord.ApplicationContext, name:str, author:discord.Member, type: str, link:str, quorum:int):
+    await ctx.defer(invisible=True)
+    if "the" in name.lower():
+        the_name = name
+    else:
+        the_name = f"the {name}"
+    if type == "constitutional":
+        header = f"""## VOTING: {the_name.upper()}
+        {the_name.title()} by <@{author.id}> is now at vote.
+
+        **__Proposal__**:
+        [LINK TO THE CONSTITUTIONAL AMENDMENT]({link})
+
+        **__ Discussion__**:
+        [LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})
+
+        All Starborn are eligible to vote by selecting one of the following options in the poll:
+
+        - **Aye** – In favor of the amendment
+
+        - **Nay** – Opposed to the amendment
+
+        - **Abstain** - Neither in favor nor opposed
+
+        """
+    elif type == "treaty":
+        header = f"""## VOTING: {the_name.upper()} (TREATY)
+        {the_name.title()} is now at vote.
+
+        **__Proposal__**:
+        [LINK TO THE TREATY]({link})
+
+        **__ Discussion__**:
+        [LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})
+
+        All Starborn are eligible to vote by selecting one of the following options in the poll:
+
+        - **Aye** – In favor of the signing of the treaty
+
+        - **Nay** – Opposed to the signing of the treaty
+
+        - **Abstain** - Neither in favor nor opposed
+
+        """
+    else:
+        header = f"""## VOTING: {the_name.upper()}
+        {the_name.title()} by <@{author.id}> is now at vote.
+
+        **__Proposal__**:
+        [LINK TO THE BILL]({link})
+
+        **__ Discussion__**:
+        [LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})
+
+        All Starborn are eligible to vote by selecting one of the following options in the poll:
+
+        - **Aye** – In favor of the bill
+
+        - **Nay** – Opposed to the bill
+
+        - **Abstain** - Neither in favor nor opposed
+
+        """
+    footer = f"The voting period will last __72 hours__. If a Starborn loses their status during the voting period, they will no longer be eligible to vote, and their vote will be disregarded. Please note that the bill requires a 60% majority of Aye votes to pass. Abstain votes are registered but not counted. The quorum for this vote is **{quorum}** (10% of Starborn)."
+    text = header + footer
+    await ctx.delete()
+    await ctx.channel.send(content=text)
+
 async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: bool, duration: int):
     await ctx.defer(invisible=True)
     if "the" in name.lower():
@@ -62,7 +130,7 @@ async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: 
     ]
     poll = discord.Poll(question=title, answers=options, duration=duration)
     await ctx.delete()
-    await ctx.respond(poll=poll)
+    await ctx.channel.send(poll=poll)
 
 @bot.event
 async def on_ready() -> None:
@@ -74,7 +142,7 @@ async def on_ready() -> None:
 # create info slash command
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
-    embed = discord.Embed(title = "Flamebringer v1.1.0", description = f"For help or technical support message <@{error_ping}> on Discord.")
+    embed = discord.Embed(title = "Flamebringer v1.2.0", description = f"For help or technical support message <@{error_ping}> on Discord.")
     logger.debug('Embed object created')
 
     await ctx.respond(embed = embed, ephemeral = True)
@@ -129,6 +197,70 @@ async def footer(ctx: discord.ApplicationContext):
             break
     if permitted:
         await _send_image(ctx=ctx, header=False)
+    else:
+        embed = discord.Embed(title = 'No Permissions', description = 'You do not have the required permissions to run this command.')
+        logger.debug('Embed object created')
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info('Error embed sent')
+
+text = halls.create_subgroup("text", "Commands for posting vote text")
+
+@text.command(name="constitutional", description="Post the vote text for a constitutional amendment")
+@discord.option("name", description="The name of the proposal going to vote", type=discord.SlashCommandOptionType.string)
+@discord.option("author", description="The Discord account of the author of the proposal", type=discord.SlashCommandOptionType.user)
+@discord.option("link", description="The URL of the dispatch with the proposal text", type=discord.SlashCommandOptionType.string)
+@discord.option("quorum", description="The quorum for the vote (10% of Starborn)", type=discord.SlashCommandOptionType.integer, min_value=7)
+async def constitutional(ctx: discord.ApplicationContext, name:str, author:discord.Member, link:str, quorum:int):
+    permitted = False
+    permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in permitted_role_ids]
+    for permitted_role in permitted_roles:
+        if permitted_role in ctx.user.roles:
+            permitted = True
+            break
+    if permitted:
+        await _send_vote_text(ctx=ctx, name=name, author=author, type="constitutional", link=link, quorum=quorum)
+    else:
+        embed = discord.Embed(title = 'No Permissions', description = 'You do not have the required permissions to run this command.')
+        logger.debug('Embed object created')
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info('Error embed sent')
+
+@text.command(name="treaty", description="Post the vote text for a treaty")
+@discord.option("name", description="The name of the proposal going to vote", type=discord.SlashCommandOptionType.string)
+@discord.option("link", description="The URL of the dispatch with the proposal text", type=discord.SlashCommandOptionType.string)
+@discord.option("quorum", description="The quorum for the vote (10% of Starborn)", type=discord.SlashCommandOptionType.integer, min_value=7)
+async def treaty(ctx: discord.ApplicationContext, name:str, link:str, quorum:int):
+    permitted = False
+    permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in permitted_role_ids]
+    for permitted_role in permitted_roles:
+        if permitted_role in ctx.user.roles:
+            permitted = True
+            break
+    if permitted:
+        await _send_vote_text(ctx=ctx, name=name, author='', type="constitutional", link=link, quorum=quorum)
+    else:
+        embed = discord.Embed(title = 'No Permissions', description = 'You do not have the required permissions to run this command.')
+        logger.debug('Embed object created')
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info('Error embed sent')
+
+@text.command(name="standard", description="Post the vote text for a bill or amendment (non-constitutional)")
+@discord.option("name", description="The name of the proposal going to vote", type=discord.SlashCommandOptionType.string)
+@discord.option("author", description="The Discord account of the author of the proposal", type=discord.SlashCommandOptionType.user)
+@discord.option("link", description="The URL of the dispatch with the proposal text", type=discord.SlashCommandOptionType.string)
+@discord.option("quorum", description="The quorum for the vote (10% of Starborn)", type=discord.SlashCommandOptionType.integer, min_value=7)
+async def standard(ctx: discord.ApplicationContext, name:str, author:discord.Member, link:str, quorum:int):
+    permitted = False
+    permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in permitted_role_ids]
+    for permitted_role in permitted_roles:
+        if permitted_role in ctx.user.roles:
+            permitted = True
+            break
+    if permitted:
+        await _send_vote_text(ctx=ctx, name=name, author=author, type="standard", link=link, quorum=quorum)
     else:
         embed = discord.Embed(title = 'No Permissions', description = 'You do not have the required permissions to run this command.')
         logger.debug('Embed object created')
