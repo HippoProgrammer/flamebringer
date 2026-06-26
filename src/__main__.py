@@ -3,9 +3,10 @@ import logging  # log handler
 import os
 import sys
 import discord  # py-cord: discord bot framework
-from yaml import safe_load as load_yaml
 import validators
 import datetime
+from yaml import safe_load as load_yaml
+from math import ceil
 
 logger = logging.getLogger("assembly")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
@@ -34,6 +35,13 @@ logger.info('Token loaded')
 # create the Bot object
 bot = discord.Bot()  # create a bot instance
 logger.debug("Bot object created")
+
+async def _get_quorum(ctx: discord.ApplicationContext):
+    quorum_role = await ctx.guild.fetch_role(int(config["quorum_role_id"]))
+    count = len(quorum_role.members)
+    count_quorum = ceil(count / 10)
+    quorum = max(count_quorum, 7)
+    return quorum
 
 async def _format_definite_article(name: str):
     if "the" in name.lower():
@@ -112,9 +120,9 @@ async def _send_image(ctx: discord.ApplicationContext, header:bool):
             file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
     await ctx.channel.send(file=file)
 
-async def _send_vote_text(ctx: discord.ApplicationContext, name: str, author: discord.Member, constitutional: bool, treaty: bool, link: str, quorum: int, duration: int):
+async def _send_vote_text(ctx: discord.ApplicationContext, name: str, author: discord.Member, constitutional: bool, treaty: bool, link: str, duration: int):
     the_name = await _format_definite_article(name=name)
-
+    quorum = await _get_quorum(ctx=ctx)
     if constitutional:
         header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE CONSTITUTIONAL AMENDMENT]({link})\n\n**__ Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the amendment\n\n- **Nay** – Opposed to the amendment\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "66,6"
@@ -166,9 +174,8 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 @discord.option("link", description="A link to the text of the proposal", type=discord.SlashCommandOptionType.string)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
-@discord.option("quorum", description="Quorum for the vote (10% of Starborn, rounded up)", type=discord.SlashCommandOptionType.integer, min_value=7)
 @discord.option("duration", description="Duration of the poll in hours (default: 48h)", type=discord.SlashCommandOptionType.integer, min_value=config["poll_durations"]["min"], max_value=config["poll_durations"]["max"], default=config["poll_durations"]["default"])
-async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, quorum: int, duration: int):
+async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, duration: int):
     logger.info("Vote command sent")
 
     permitted = False
@@ -184,7 +191,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
             if not (constitutional and treaty):
                 await ctx.defer(ephemeral=True)
                 await _send_image(ctx=ctx, header=True)
-                await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, quorum=quorum, duration=duration)
+                await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, duration=duration)
                 await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
                 await _send_vote_status(ctx=ctx)
                 await _send_image(ctx=ctx, header=False)
