@@ -165,7 +165,8 @@ async def on_ready() -> None:
 # create info slash command
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
-    embed = discord.Embed(title = "Flamebringer v1.2.0", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
+    logger.info(f"Vote command sent by {ctx.user.id}")
+    embed = discord.Embed(title = "Flamebringer v1.3.0", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
     logger.debug('Embed object created')
 
     await ctx.respond(embed = embed, ephemeral = True)
@@ -181,7 +182,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("duration", description="Duration of the poll in hours (default: 48h)", type=discord.SlashCommandOptionType.integer, min_value=config["poll_durations"]["min"], max_value=config["poll_durations"]["max"], default=config["poll_durations"]["default"])
 async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, duration: int):
-    logger.info("Vote command sent")
+    logger.info(f"Vote command sent by {ctx.user.id}")
 
     permitted = False
     permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in config["fw_permission_role_ids"]]
@@ -234,7 +235,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer, min_value=7)
 async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
-    logger.info("Count command sent")
+    logger.info(f"Count command sent by {ctx.user.id}")
 
     permitted = False
     permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in config["fw_permission_role_ids"]]
@@ -293,7 +294,7 @@ triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circ
 @discord.option("aye", description="How many Triune Circle members voted in favor of approval", type=discord.SlashCommandOptionType.integer, min_value=0, max_value=3)
 @discord.option("nay", description="How many Triune Circle members voted against approval", type=discord.SlashCommandOptionType.integer, min_value=0, max_value=3)
 async def approve(ctx: discord.ApplicationContext, name: str, treaty: bool, aye: int, nay: int):
-    logger.info("Approve command sent")
+    logger.info(f"Approve command sent by {ctx.user.id}")
 
     permitted_role = await ctx.guild.fetch_role(int(config["tc_permission_role_id"]))
     if permitted_role in ctx.user.roles:
