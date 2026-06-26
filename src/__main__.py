@@ -86,27 +86,31 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     else:
         aye_percent = 0
 
-    if constitutional:
-        if aye_percent > (2/3):
-            passed = "APPROVED"
-            sanction = f"**{the_name.title()} has passed the Halls of Solaris, meeting the required two-thirds majority.\nThe amendment is submitted to the <@&{config['tc_permission_role_id']}> who has now 72 hours to formally approve or veto it. Once approval is granted or if no action is taken within that timeframe, it will become law.**"
+    if quorate:
+        if constitutional:
+            if aye_percent > (2/3):
+                passed = "APPROVED"
+                sanction = f"**{the_name.title()} has passed the Halls of Solaris, meeting the required two-thirds majority.\nThe amendment is submitted to the <@&{config['tc_permission_role_id']}> who has now 72 hours to formally approve or veto it. Once approval is granted or if no action is taken within that timeframe, it will become law.**"
+            else:
+                passed = "REJECTED"
+                sanction = f"**{the_name.title()} has failed to achieve the required two-thirds majority and therefore does not pass the Halls of Solaris.**"
+        elif treaty:
+            if aye_percent > (3/5):
+                passed = "APPROVED"
+                sanction = f"**{the_name.title()} has been approved by the Halls of Solaris. <@&{config['tc_permission_role_id']}>**"
+            else:
+                passed = "REJECTED"
+                sanction = f"**{the_name.title()} has been rejected by the Halls of Solaris.**"
         else:
-            passed = "REJECTED"
-            sanction = f"**{the_name.title()} has failed to achieve the required two-thirds majority and therefore does not pass the Halls of Solaris.**"
-    elif treaty:
-        if aye_percent > (3/5):
-            passed = "APPROVED"
-            sanction = f"**{the_name.title()} has been approved by the Halls of Solaris. <@&{config['tc_permission_role_id']}>**"
-        else:
-            passed = "REJECTED"
-            sanction = f"**{the_name.title()} has been rejected by the Halls of Solaris.**"
+            if aye_percent > (3/5):
+                passed = "PASSED"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris and as of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is now law.**"
+            else:
+                passed = "FAILED"
+                sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
     else:
-        if aye_percent > (3/5):
-            passed = "PASSED"
-            sanction = f"**{the_name.title()} has been passed by the Halls of Solaris and as of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is now law.**"
-        else:
-            passed = "FAILED"
-            sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
+        passed = "FAILED TO REACH QUORUM"
+        sanction = f"**{the_name.title()} has failed to reach quorum and therefore does not pass the Halls of Solaris. The Flamewarden may reopen debate or extend the voting period."
     status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {total}\n\nAye = {round(aye_percent, 1)}%"
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
