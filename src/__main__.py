@@ -80,13 +80,14 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     aye = [answer for answer in poll.answers if answer.text == "Aye"][0].count
     nay = [answer for answer in poll.answers if answer.text == "Nay"][0].count
     abstain = [answer for answer in poll.answers if answer.text == "Abstain"][0].count
-    total = aye + nay
-    if total > 0: # check for div/0 errors!
-        aye_percent = (aye / total) * 100
+    vote_total = aye + nay
+    quorum_total = aye + nay + abstain
+    if vote_total > 0: # check for div/0 errors!
+        aye_percent = (aye / vote_total) * 100
     else:
         aye_percent = 0
 
-    if quorate:
+    if quorum_total > quorum:
         if constitutional:
             if aye_percent > (2/3):
                 passed = "APPROVED"
@@ -109,9 +110,9 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
                 passed = "FAILED"
                 sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
     else:
-        passed = "FAILED TO REACH QUORUM"
+        passed = f"FAILED TO REACH QUORUM\n*The quorum for this vote was {quorum}, but only {quorum_total} Starborn participated.*"
         sanction = f"**{the_name.title()} has failed to reach quorum and therefore does not pass the Halls of Solaris. The Flamewarden may reopen debate or extend the voting period."
-    status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {total}\n\nAye = {round(aye_percent, 1)}%"
+    status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {vote_total}\n\nAye = {round(aye_percent, 1)}%"
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
 
