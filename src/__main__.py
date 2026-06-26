@@ -160,7 +160,7 @@ async def on_ready() -> None:
 # create info slash command
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
-    embed = discord.Embed(title = "Flamebringer v1.2.0", description = f"For help or technical support message <@{config["error_ping"]}> on Discord.")
+    embed = discord.Embed(title = "Flamebringer v1.2.0", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
     logger.debug('Embed object created')
 
     await ctx.respond(embed = embed, ephemeral = True)
@@ -314,7 +314,7 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
 
         await ctx.respond(embed = embed, ephemeral = True)
         logger.info("Message not found embed sent")
-    logger.error(error, exc_info=1)
+    logger.exception(error)
     await ctx.respond(f'<@{config["error_ping"]}> An unspecified error occurred.')
 
 bot.run(token)
