@@ -73,7 +73,7 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
 
-async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationContext, name:str, status_msg:discord.Message, poll_msg:discord.Message, constitutional:bool, treaty:bool):
+async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationContext, name:str, status_msg:discord.Message, poll_msg:discord.Message, constitutional:bool, treaty:bool, quorum: int):
     the_name = await _format_definite_article(name=name)
 
     poll = poll_msg.poll
@@ -227,7 +227,8 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 @discord.option("poll_msg", description="The URL of the poll (sent by the bot)")
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
-async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool):
+@discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer)
+async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
     logger.info("Count command sent")
 
     permitted = False
@@ -244,7 +245,7 @@ async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.
             if poll_msg.poll is not None:
                 if "STATUS" in status_msg.content:
                     await ctx.defer(ephemeral=True)
-                    await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty)
+                    await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, quorum=quorum)
                     await ctx.respond(content="Success", ephemeral=True)
                 else:
                     logger.info("status_msg does not contain 'STATUS'")
@@ -315,6 +316,6 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
         await ctx.respond(embed = embed, ephemeral = True)
         logger.info("Message not found embed sent")
     logger.exception(error)
-    await ctx.respond(f'<@{config["error_ping"]}> An unspecified error occurred.')
+    await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred.')
 
 bot.run(token)

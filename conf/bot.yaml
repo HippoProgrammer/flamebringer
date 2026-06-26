@@ -4,7 +4,7 @@ config:
   fw_permission_role_ids:
     - 1492104574691967128
   tc_permission_role_id: 1520018373004492880
-  quorum_role_id: 0
+  quorum_role_id: 1493309785548787792
   poll_durations:
     min: 48
     max: 172
