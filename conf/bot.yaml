@@ -1,8 +1,10 @@
 config:
   token_file: /run/secrets/bot-token
   error_ping: 1271403487045095465
-  permission_role_ids:
+  fw_permission_role_ids:
     - 1492104574691967128
+  tc_permission_role_id: 1520018373004492880
+  quorum_role_id: 0
   poll_durations:
     min: 48
     max: 172
