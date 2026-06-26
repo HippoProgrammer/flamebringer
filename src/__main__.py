@@ -232,7 +232,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 @discord.option("poll_msg", description="The URL of the poll (sent by the bot)")
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
-@discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer)
+@discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer, min_value=7)
 async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
     logger.info("Count command sent")
 
@@ -320,7 +320,8 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
 
         await ctx.respond(embed = embed, ephemeral = True)
         logger.info("Message not found embed sent")
-    logger.exception(error)
-    await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred.')
+    else:
+        logger.exception(error)
+        await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred.')
 
 bot.run(token)
