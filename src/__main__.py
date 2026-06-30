@@ -33,7 +33,7 @@ with open(config["token_file"], "r") as file: # read the token file
 logger.info('Token loaded')
 
 # create the Bot object
-intents = discord.Intents.none()
+intents = discord.Intents.default()
 intents.members = True
 bot = discord.Bot(intents = intents)  # create a bot instance
 logger.debug("Bot object created")
