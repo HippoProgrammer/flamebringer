@@ -37,8 +37,8 @@ bot = discord.Bot()  # create a bot instance
 logger.debug("Bot object created")
 
 async def _get_quorum(ctx: discord.ApplicationContext):
-    quorum_role = await ctx.guild.fetch_role(int(config["quorum_role_id"]))
-    count = len(quorum_role.members)
+    quorum_role = ctx.guild.get_role(int(config["quorum_role_id"]))
+    count = len([member for member in quorum_role.members if not(member.bot)])
     count_quorum = ceil(count / 10)
     quorum = max(count_quorum, 7)
     return quorum
@@ -185,7 +185,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
     logger.info(f"Vote command sent by {ctx.user.id}")
 
     permitted = False
-    permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in config["fw_permission_role_ids"]]
+    permitted_roles = [ctx.guild.get_role(int(role)) for role in config["fw_permission_role_ids"]]
     for permitted_role in permitted_roles:
         if permitted_role in ctx.user.roles:
             permitted = True
@@ -238,7 +238,7 @@ async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.
     logger.info(f"Count command sent by {ctx.user.id}")
 
     permitted = False
-    permitted_roles = [await ctx.guild.fetch_role(int(role)) for role in config["fw_permission_role_ids"]]
+    permitted_roles = [ctx.guild.get_role(int(role)) for role in config["fw_permission_role_ids"]]
     for permitted_role in permitted_roles:
         if permitted_role in ctx.user.roles:
             permitted = True
