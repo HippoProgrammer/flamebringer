@@ -186,12 +186,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, duration: int):
     logger.info(f"Vote command sent by {ctx.user.id}")
 
-    permitted = False
-    permitted_roles = [ctx.guild.get_role(int(role)) for role in config["fw_permission_role_ids"]]
-    for permitted_role in permitted_roles:
-        if permitted_role in ctx.user.roles:
-            permitted = True
-            break
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
 
     if permitted:
         logger.info("User is authenticated")
@@ -239,12 +234,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
     logger.info(f"Count command sent by {ctx.user.id}")
 
-    permitted = False
-    permitted_roles = [ctx.guild.get_role(int(role)) for role in config["fw_permission_role_ids"]]
-    for permitted_role in permitted_roles:
-        if permitted_role in ctx.user.roles:
-            permitted = True
-            break
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
 
     if permitted:
         logger.info("User is authenticated")
@@ -298,8 +288,7 @@ triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circ
 async def approve(ctx: discord.ApplicationContext, name: str, treaty: bool, aye: int, nay: int):
     logger.info(f"Approve command sent by {ctx.user.id}")
 
-    permitted_role = await ctx.guild.fetch_role(int(config["tc_permission_role_id"]))
-    if permitted_role in ctx.user.roles:
+    if ctx.user.get_role(int(config["tc_permission_role_id"])):
         logger.info("User is authenticated")
         await ctx.defer(ephemeral=True)
         await _send_tc_approval(ctx=ctx, name=name, treaty=treaty, aye=aye, nay=nay)
