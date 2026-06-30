@@ -8,7 +8,7 @@ import datetime
 from yaml import safe_load as load_yaml
 from math import ceil
 
-logger = logging.getLogger("assembly")  # get the logger for this script
+logger = logging.getLogger("flamewarden")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
@@ -33,7 +33,9 @@ with open(config["token_file"], "r") as file: # read the token file
 logger.info('Token loaded')
 
 # create the Bot object
-bot = discord.Bot()  # create a bot instance
+intents = discord.Intents.none()
+intents.members = True
+bot = discord.Bot(intents = intents)  # create a bot instance
 logger.debug("Bot object created")
 
 async def _get_quorum(ctx: discord.ApplicationContext):
