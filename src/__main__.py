@@ -164,6 +164,10 @@ async def _lock_thread(ctx: discord.ApplicationContext):
     if isinstance(ctx.channel, discord.threads.Thread):
         await ctx.channel.edit(locked=True)
 
+async def _set_vote_tag(ctx: discord.ApplicationContext):
+    if isinstance(ctx.channel, discord.threads.Thread):
+        await ctx.channel.edit(applied_tags=[await ctx.channel.get_tag(config["vote_tag_id"])])
+
 @bot.event
 async def on_ready() -> None:
     activity = discord.Game("Warding the Flame...")
@@ -207,6 +211,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
                     await _send_vote_status(ctx=ctx)
                     await _send_image(ctx=ctx, header=False)
+                    await _set_vote_tag(ctx=ctx)
                     await ctx.respond(content="Success", ephemeral=True)
                 else:
                     logger.info("Conflicting options selected: bill cannot be both constitutional and treaty")
