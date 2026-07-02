@@ -186,43 +186,51 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, duration: int):
     logger.info(f"Vote command sent by {ctx.user.id}")
 
-    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    if type(ctx.channel) is discord.Thread:
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+        if permitted:
+            logger.info("User is authenticated")
+            if validators.url(link):
+                if not (constitutional and treaty):
+                    await ctx.defer(ephemeral=True)
+                    await _send_image(ctx=ctx, header=True)
+                    await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, duration=duration)
+                    await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
+                    await _send_vote_status(ctx=ctx)
+                    await _send_image(ctx=ctx, header=False)
+                    await ctx.respond(content="Success", ephemeral=True)
+                else:
+                    logger.info("Conflicting options selected: bill cannot be both constitutional and treaty")
 
-    if permitted:
-        logger.info("User is authenticated")
-        if validators.url(link):
-            if not (constitutional and treaty):
-                await ctx.defer(ephemeral=True)
-                await _send_image(ctx=ctx, header=True)
-                await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, duration=duration)
-                await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
-                await _send_vote_status(ctx=ctx)
-                await _send_image(ctx=ctx, header=False)
-                await ctx.respond(content="Success", ephemeral=True)
+                    embed = discord.Embed(title = "Bill Type Mismatch", description = "The bill cannot be both a constitutional amendment and a treaty.")
+                    logger.debug("Embed object created")
+
+                    await ctx.respond(embed = embed, ephemeral = True)
+                    logger.info("Bill type mismatch embed sent")
             else:
-                logger.info("Conflicting options selected: bill cannot be both constitutional and treaty")
+                logger.info("Invalid URL provided: valid URL must be provided")
 
-                embed = discord.Embed(title = "Bill Type Mismatch", description = "The bill cannot be both a constitutional amendment and a treaty.")
+                embed = discord.Embed(title = "Invalid URL", description = "The link provided is not a valid URL.")
                 logger.debug("Embed object created")
 
                 await ctx.respond(embed = embed, ephemeral = True)
-                logger.info("Bill type mismatch embed sent")
+                logger.info("Invalid URL embed sent")
         else:
-            logger.info("Invalid URL provided: valid URL must be provided")
+            logger.info("User is not authenticated")
 
-            embed = discord.Embed(title = "Invalid URL", description = "The link provided is not a valid URL.")
+            embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
             logger.debug("Embed object created")
 
             await ctx.respond(embed = embed, ephemeral = True)
-            logger.info("Invalid URL embed sent")
+            logger.info("No permissions embed sent")
     else:
-        logger.info("User is not authenticated")
+        logger.info("Command is not in a thread channel")
 
-        embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+        embed = discord.Embed(title = "Wrong Channel Type", description = "Halls commands must be run in a thread.")
         logger.debug("Embed object created")
 
         await ctx.respond(embed = embed, ephemeral = True)
-        logger.info("No permissions embed sent")
+        logger.info("Wrong channel type embed sent")
 
 @halls.command(name="count", description="Edit the vote status when the vote ends")
 @discord.option("name", description="Name of the proposal")
@@ -234,49 +242,57 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
     logger.info(f"Count command sent by {ctx.user.id}")
 
-    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    if type(ctx.channel) is discord.Thread:
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+        if permitted:
+            logger.info("User is authenticated")
 
-    if permitted:
-        logger.info("User is authenticated")
+            if not (constitutional and treaty):
+                if poll_msg.poll is not None:
+                    if "STATUS" in status_msg.content:
+                        await ctx.defer(ephemeral=True)
+                        await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, quorum=quorum)
+                        await ctx.respond(content="Success", ephemeral=True)
+                    else:
+                        logger.info("status_msg does not contain 'STATUS'")
 
-        if not (constitutional and treaty):
-            if poll_msg.poll is not None:
-                if "STATUS" in status_msg.content:
-                    await ctx.defer(ephemeral=True)
-                    await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, quorum=quorum)
-                    await ctx.respond(content="Success", ephemeral=True)
+                        embed = discord.Embed(title = "Status Message not provided", description = "The status message does not contain the word 'status' - are you sure it is correct?")
+                        logger.debug("Embed object created")
+
+                        await ctx.respond(embed = embed, ephemeral = True)
+                        logger.info("'No status' embed sent")
                 else:
-                    logger.info("status_msg does not contain 'STATUS'")
+                    logger.info("No poll on poll_msg: poll_msg must have poll")
 
-                    embed = discord.Embed(title = "Status Message not provided", description = "The status message does not contain the word 'status' - are you sure it is correct?")
+                    embed = discord.Embed(title = "Poll Message does not have poll", description = "A poll must be attached to the poll_msg argument.")
                     logger.debug("Embed object created")
 
                     await ctx.respond(embed = embed, ephemeral = True)
-                    logger.info("'No status' embed sent")
+                    logger.info("'No poll' embed sent")
             else:
-                logger.info("No poll on poll_msg: poll_msg must have poll")
+                logger.info("Conflicting options selected: bill cannot be both constitutional and treaty")
 
-                embed = discord.Embed(title = "Poll Message does not have poll", description = "A poll must be attached to the poll_msg argument.")
+                embed = discord.Embed(title = "Bill Type Mismatch", description = "The bill cannot be both a constitutional amendment and a treaty.")
                 logger.debug("Embed object created")
 
                 await ctx.respond(embed = embed, ephemeral = True)
-                logger.info("'No poll' embed sent")
+                logger.info("Bill type mismatch embed sent")
         else:
-            logger.info("Conflicting options selected: bill cannot be both constitutional and treaty")
+            logger.info("User is not authenticated")
 
-            embed = discord.Embed(title = "Bill Type Mismatch", description = "The bill cannot be both a constitutional amendment and a treaty.")
+            embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
             logger.debug("Embed object created")
 
             await ctx.respond(embed = embed, ephemeral = True)
-            logger.info("Bill type mismatch embed sent")
+            logger.info("No permissions embed sent")
     else:
-        logger.info("User is not authenticated")
+        logger.info("Command is not in a thread channel")
 
-        embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+        embed = discord.Embed(title = "Wrong Channel Type", description = "Halls commands must be run in a thread.")
         logger.debug("Embed object created")
 
         await ctx.respond(embed = embed, ephemeral = True)
-        logger.info("No permissions embed sent")
+        logger.info("Wrong channel type embed sent")
 
 triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circle's approval of laws")
 
@@ -288,19 +304,28 @@ triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circ
 async def approve(ctx: discord.ApplicationContext, name: str, treaty: bool, aye: int, nay: int):
     logger.info(f"Approve command sent by {ctx.user.id}")
 
-    if ctx.user.get_role(int(config["tc_permission_role_id"])):
-        logger.info("User is authenticated")
-        await ctx.defer(ephemeral=True)
-        await _send_tc_approval(ctx=ctx, name=name, treaty=treaty, aye=aye, nay=nay)
-        await ctx.respond(content="Success", ephemeral=True)
-    else:
-        logger.info("User is not authenticated")
+    if type(ctx.channel) is discord.Thread:
+        if ctx.user.get_role(int(config["tc_permission_role_id"])):
+            logger.info("User is authenticated")
+            await ctx.defer(ephemeral=True)
+            await _send_tc_approval(ctx=ctx, name=name, treaty=treaty, aye=aye, nay=nay)
+            await ctx.respond(content="Success", ephemeral=True)
+        else:
+            logger.info("User is not authenticated")
 
-        embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+            embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+            logger.debug("Embed object created")
+
+            await ctx.respond(embed = embed, ephemeral = True)
+            logger.info("No permissions embed sent")
+    else:
+        logger.info("Command is not in a thread channel")
+
+        embed = discord.Embed(title = "Wrong Channel Type", description = "Halls commands must be run in a thread.")
         logger.debug("Embed object created")
 
         await ctx.respond(embed = embed, ephemeral = True)
-        logger.info("No permissions embed sent")
+        logger.info("Wrong channel type embed sent")
 
 @bot.event
 async def on_application_command_error(ctx:discord.ApplicationContext, error:discord.DiscordException):
