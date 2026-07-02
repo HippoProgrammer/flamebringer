@@ -48,17 +48,20 @@ async def _get_quorum(ctx: discord.ApplicationContext):
 async def _set_vote_tag(ctx: discord.ApplicationContext):
     if isinstance(ctx.channel, discord.threads.Thread):
         if isinstance(ctx.channel.parent, discord.ForumChannel):
-            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["vote_tag_id"])])
+            tag = await ctx.channel.parent.get_tag(config["vote_tag_id"])
+            await ctx.channel.edit(applied_tags=[tag])
 
 async def _set_pass_tag(ctx: discord.ApplicationContext):
     if isinstance(ctx.channel, discord.threads.Thread):
         if isinstance(ctx.channel.parent, discord.ForumChannel):
-            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["passed_tag_id"])])
+            tag = await ctx.channel.parent.get_tag(config["passed_tag_id"])
+            await ctx.channel.edit(applied_tags=[tag])
 
 async def _set_fail_tag(ctx: discord.ApplicationContext):
     if isinstance(ctx.channel, discord.threads.Thread):
         if isinstance(ctx.channel.parent, discord.ForumChannel):
-            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["failed_tag_id"])])
+            tag = await ctx.channel.parent.get_tag(config["failed_tag_id"])
+            await ctx.channel.edit(applied_tags=[tag])
 
 async def _format_definite_article(name: str):
     if "the" in name.lower():
