@@ -157,6 +157,13 @@ async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: 
     poll = discord.Poll(question=title, answers=options, duration=duration)
     await ctx.channel.send(poll=poll)
 
+async def _send_lock_message(ctx: discord.ApplicationContext):
+    await ctx.channel.send(f"<@&{config['fw_permission_role_ids'][0]}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
+
+async def _lock_thread(ctx: discord.ApplicationContext):
+    if type(ctx.channel) is discord.Thread:
+        ctx.channel.locked = True
+
 @bot.event
 async def on_ready() -> None:
     activity = discord.Game("Warding the Flame...")
@@ -193,6 +200,8 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
             if validators.url(link):
                 if not (constitutional and treaty):
                     await ctx.defer(ephemeral=True)
+                    await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
+                    await _lock_thread(ctx=ctx)
                     await _send_image(ctx=ctx, header=True)
                     await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, duration=duration)
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
