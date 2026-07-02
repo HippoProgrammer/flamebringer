@@ -45,6 +45,21 @@ async def _get_quorum(ctx: discord.ApplicationContext):
     quorum = max(count_quorum, 7)
     return quorum
 
+async def _set_vote_tag(ctx: discord.ApplicationContext):
+    if isinstance(ctx.channel, discord.threads.Thread):
+        if isinstance(ctx.channel.parent, discord.ForumChannel):
+            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["vote_tag_id"])])
+
+async def _set_pass_tag(ctx: discord.ApplicationContext):
+    if isinstance(ctx.channel, discord.threads.Thread):
+        if isinstance(ctx.channel.parent, discord.ForumChannel):
+            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["passed_tag_id"])])
+
+async def _set_fail_tag(ctx: discord.ApplicationContext):
+    if isinstance(ctx.channel, discord.threads.Thread):
+        if isinstance(ctx.channel.parent, discord.ForumChannel):
+            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["failed_tag_id"])])
+
 async def _format_definite_article(name: str):
     if "the" in name.lower():
         the_name = name
@@ -117,6 +132,10 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {vote_total}\n\nAye = {round(aye_percent, 1)}%"
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
+    if passed == "PASSED" or passed == "APPROVED":
+        await _set_pass_tag(ctx=ctx)
+    elif passed == "FAILED" or passed == "REJECTED":
+        await _set_fail_tag(ctx=ctx)
 
 async def _send_image(ctx: discord.ApplicationContext, header:bool):
     if header:
@@ -163,11 +182,6 @@ async def _send_lock_message(ctx: discord.ApplicationContext):
 async def _lock_thread(ctx: discord.ApplicationContext):
     if isinstance(ctx.channel, discord.threads.Thread):
         await ctx.channel.edit(locked=True)
-
-async def _set_vote_tag(ctx: discord.ApplicationContext):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        if isinstance(ctx.channel.parent, discord.ForumChannel):
-            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["vote_tag_id"])])
 
 @bot.event
 async def on_ready() -> None:
