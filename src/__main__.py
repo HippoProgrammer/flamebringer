@@ -161,8 +161,8 @@ async def _send_lock_message(ctx: discord.ApplicationContext):
     await ctx.channel.send(f"<@&{config['fw_permission_role_ids'][0]}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
 
 async def _lock_thread(ctx: discord.ApplicationContext):
-    if type(ctx.channel) is discord.Thread:
-        ctx.channel.locked = True
+    if isinstance(ctx.channel, discord.threads.Thread):
+        await ctx.channel.edit(locked=True)
 
 @bot.event
 async def on_ready() -> None:
@@ -175,7 +175,7 @@ async def on_ready() -> None:
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
     logger.info(f"Vote command sent by {ctx.user.id}")
-    embed = discord.Embed(title = "Flamebringer v1.3.1", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
+    embed = discord.Embed(title = "Flamebringer v1.3.2", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
     logger.debug('Embed object created')
 
     await ctx.respond(embed = embed, ephemeral = True)
@@ -193,7 +193,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, duration: int):
     logger.info(f"Vote command sent by {ctx.user.id}")
 
-    if type(ctx.channel) is discord.Thread:
+    if isinstance(ctx.channel, discord.threads.Thread):
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
@@ -251,7 +251,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
     logger.info(f"Count command sent by {ctx.user.id}")
 
-    if type(ctx.channel) is discord.Thread:
+    if isinstance(ctx.channel, discord.threads.Thread):
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
@@ -313,7 +313,7 @@ triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circ
 async def approve(ctx: discord.ApplicationContext, name: str, treaty: bool, aye: int, nay: int):
     logger.info(f"Approve command sent by {ctx.user.id}")
 
-    if type(ctx.channel) is discord.Thread:
+    if isinstance(ctx.channel, discord.threads.Thread):
         if ctx.user.get_role(int(config["tc_permission_role_id"])):
             logger.info("User is authenticated")
             await ctx.defer(ephemeral=True)
