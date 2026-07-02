@@ -166,7 +166,8 @@ async def _lock_thread(ctx: discord.ApplicationContext):
 
 async def _set_vote_tag(ctx: discord.ApplicationContext):
     if isinstance(ctx.channel, discord.threads.Thread):
-        await ctx.channel.edit(applied_tags=[await ctx.channel.get_tag(config["vote_tag_id"])])
+        if isinstance(ctx.channel.parent, discord.ForumChannel):
+            await ctx.channel.edit(applied_tags=[await ctx.channel.parent.get_tag(config["vote_tag_id"])])
 
 @bot.event
 async def on_ready() -> None:
