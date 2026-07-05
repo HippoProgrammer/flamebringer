@@ -198,7 +198,7 @@ async def on_ready() -> None:
 # create info slash command
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
-    logger.info(f"Vote command sent by {ctx.user.id}")
+    logger.info(f"Info command sent by {ctx.user.id}")
     embed = discord.Embed(title = f"Flamebringer v{__version__}", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
     logger.debug('Embed object created')
 
