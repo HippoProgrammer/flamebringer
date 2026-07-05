@@ -8,6 +8,8 @@ import datetime
 from yaml import safe_load as load_yaml
 from math import ceil
 
+__version__ = "1.3.3"
+
 logger = logging.getLogger("flamewarden")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -103,7 +105,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     vote_total = aye + nay
     quorum_total = aye + nay + abstain
     if vote_total > 0: # check for div/0 errors!
-        aye_percent = (aye / vote_total) * 100
+        aye_percent = (aye / vote_total)
     else:
         aye_percent = 0
 
@@ -132,7 +134,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     else:
         passed = f"FAILED TO REACH QUORUM\n*The quorum for this vote was {quorum}, but only {quorum_total} Starborn participated.*"
         sanction = f"**{the_name.title()} has failed to reach quorum and therefore does not pass the Halls of Solaris. The Flamewarden may reopen debate or extend the voting period.**"
-    status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {vote_total}\n\nAye = {round(aye_percent, 1)}%"
+    status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {vote_total}\n\nAye = {round(aye_percent * 100, 1)}%"
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
     if passed == "PASSED" or passed == "APPROVED":
@@ -197,7 +199,7 @@ async def on_ready() -> None:
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
     logger.info(f"Vote command sent by {ctx.user.id}")
-    embed = discord.Embed(title = "Flamebringer v1.3.2", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
+    embed = discord.Embed(title = f"Flamebringer v{__version__}", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
     logger.debug('Embed object created')
 
     await ctx.respond(embed = embed, ephemeral = True)
