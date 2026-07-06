@@ -1,70 +1,75 @@
 # import required libraries
 import logging  # log handler
-import os
-import sys
+import os # file handling
+import sys # stream handling
 import discord  # py-cord: discord bot framework
-import validators
-import datetime
-from yaml import safe_load as load_yaml
-from math import ceil
+import validators # string validation
+import datetime # datetime handling
+from yaml import safe_load as load_yaml # yaml parsing
+from math import ceil # ceiling function
 
-__version__ = "1.3.4"
+__version__ = "1.3.4" # current version
 
 # configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s") # format [time] - [module] - [error level] - [message]
+handler.setFormatter(formatter) # attach the formatter to the handler
 logger.addHandler(handler)  # attach the handler to the logger
 logger.setLevel(logging.DEBUG)  # set the logs to output at debug verbosity
-logger.info("Logging started")
+logger.info("Logging started") 
 
 # load config
-config_file = str(os.getenv("FLAMEBRINGER_CONFIG_FILE"))
-if not os.path.isfile(config_file): # check the config file actually exists
-    msg = "FLAMEBRINGER_CONFIG_FILE environment variable is not a valid path, cannot start"
-    logger.error(msg)
-    sys.exit()
-with open(config_file, "r") as file:
-    config = load_yaml(file)
-config = config["config"]
+config_file = str(os.getenv("FLAMEBRINGER_CONFIG_FILE")) # get the config file path from the env var
+if not os.path.isfile(config_file): # check the config file actually exists: if not,
+    logger.error("FLAMEBRINGER_CONFIG_FILE environment variable is not a valid path, cannot start" ) # send an error message
+    sys.exit() # quit
+# if we get here, the config file must exist, so we
+with open(config_file, "r") as file: # open the config file
+    config = load_yaml(file) # parse it into a python object
+config = config["config"] # navigate into the first section - everything should be under this first key so we don't need to constantly reference it
 logger.info("Config loaded")
 
 # load token
-with open(config["token_file"], "r") as file: # read the token file
+token_file = config["token_file"] # get the token file path from the config file
+if not os.path.isfile((token_file): # check the token file actually exists: if not,
+    logger.error("token_file configuration value is not a valid path, cannot start") # send an error message
+    sys.exit() # quit
+# if we get here, the token file must exist, so we
+with open(token_file, "r") as file: # read the token file
     token = file.read()
 logger.info('Token loaded')
 
 # create the Bot object
-intents = discord.Intents.default()
-intents.members = True
-bot = discord.Bot(intents = intents)  # create a bot instance
+intents = discord.Intents.default() # we need default intents so the bot actually functions well
+intents.members = True # we also need members permission to calculate quorum, as that requires fetching the full member list of a role which needs the members intent
+bot = discord.Bot(intents = intents)  # create a bot instance, with the previously set intents
 logger.debug("Bot object created")
 
 # basic discord functions (calculate quorum, lock threads, set tags etc.)
-async def _get_quorum(ctx: discord.ApplicationContext):
-    quorum_role = ctx.guild.get_role(int(config["quorum_role_id"]))
-    count = len([member for member in quorum_role.members if not(member.bot)])
-    count_quorum = ceil(count / 10)
-    quorum = max(count_quorum, 7)
+async def _get_quorum(ctx: discord.ApplicationContext): # get quorum based on a pre-configured role
+    quorum_role = ctx.guild.get_role(int(config["quorum_role_id"])) # fetch the role id from the config and get the Role object from the bot
+    count = len([member for member in quorum_role.members if not(member.bot)]) # use a list comprehension to only count members who are not bots
+    count_quorum = ceil(count / 10) # quorum is 10%, rounded up
+    quorum = max(count_quorum, 7) # but if 10% is less than 7, we use 7
     return quorum
 
-async def _set_tag(ctx: discord.ApplicationContext, tag:str):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        if isinstance(ctx.channel.parent, discord.ForumChannel):
-            tag = ctx.channel.parent.get_tag(config[f"{tag}_tag_id"])
-            await ctx.channel.edit(applied_tags=[tag])
+async def _set_tag(ctx: discord.ApplicationContext, tag:str): # set a tag on a thread, CLEARING ALL PREVIOUS TAGS
+    if isinstance(ctx.channel, discord.threads.Thread): # check that the channel is actually a thread channel
+        if isinstance(ctx.channel.parent, discord.ForumChannel): # check that the thread channel is in a forum channel, so it actually supports tags
+            tag = ctx.channel.parent.get_tag(config[f"{tag}_tag_id"]) # if those are both true, try to get the requested ForumTag object from the parent forum channel
+            await ctx.channel.edit(applied_tags=[tag]) # apply that tag to the thread
 
-async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        await ctx.channel.edit(locked=lock)
+async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True): # lock or unlock a thread
+    if isinstance(ctx.channel, discord.threads.Thread): # if it's a thread, it can be locked or unlocked
+        await ctx.channel.edit(locked=lock) # so set the status requested
 
 # basic python functions (string formatting etc.)
-async def _format_definite_article(name: str):
-    if "the" in name.lower():
-        the_name = name
-    else:
-        the_name = f"the {name}"
+async def _format_definite_article(name: str): # format a name to have correct definite article (the)
+    if "the" in name.lower(): # if 'the' is in the name
+        the_name = name # the name should be "the [x]"
+    else: # otherwise
+        the_name = f"the {name}" # the name should be the "[x]"
     return the_name
 
 # command backend functions
