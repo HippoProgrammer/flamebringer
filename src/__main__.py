@@ -8,7 +8,7 @@ import datetime
 from yaml import safe_load as load_yaml
 from math import ceil
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 
 logger = logging.getLogger("flamewarden")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
@@ -65,6 +65,10 @@ async def _set_fail_tag(ctx: discord.ApplicationContext):
             tag = ctx.channel.parent.get_tag(config["failed_tag_id"])
             await ctx.channel.edit(applied_tags=[tag])
 
+async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True):
+    if isinstance(ctx.channel, discord.threads.Thread):
+        await ctx.channel.edit(locked=lock)
+
 async def _format_definite_article(name: str):
     if "the" in name.lower():
         the_name = name
@@ -87,6 +91,8 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: 
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle.**"
         else:
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle. A petition to override the veto may now be submitted within 72 hours in this channel. The petition must receive the support of at least five Starborn, including the original proposer, to proceed.**"
+            await _set_thread_lock(ctx=ctx, lock=False)
+            
     tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay})."
 
     await ctx.channel.send(content=tc_approval)
@@ -184,10 +190,6 @@ async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: 
 async def _send_lock_message(ctx: discord.ApplicationContext):
     await ctx.channel.send(f"<@&{config['fw_permission_role_ids'][0]}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
 
-async def _lock_thread(ctx: discord.ApplicationContext):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        await ctx.channel.edit(locked=True)
-
 @bot.event
 async def on_ready() -> None:
     activity = discord.Game("Warding the Flame...")
@@ -225,7 +227,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
                 if not (constitutional and treaty):
                     await ctx.defer(ephemeral=True)
                     await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
-                    await _lock_thread(ctx=ctx)
+                    await _set_thread_lock(ctx=ctx)
                     await _send_image(ctx=ctx, header=True)
                     await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, duration=duration)
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
