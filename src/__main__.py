@@ -32,7 +32,7 @@ logger.info("Config loaded")
 
 # load token
 token_file = config["token_file"] # get the token file path from the config file
-if not os.path.isfile((token_file): # check the token file actually exists: if not,
+if not os.path.isfile(token_file): # check the token file actually exists: if not,
     logger.error("token_file configuration value is not a valid path, cannot start") # send an error message
     sys.exit() # quit
 # if we get here, the token file must exist, so we
