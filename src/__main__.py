@@ -8,7 +8,7 @@ import datetime
 from yaml import safe_load as load_yaml
 from math import ceil
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 
 logger = logging.getLogger("flamewarden")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
@@ -151,19 +151,22 @@ async def _send_image(ctx: discord.ApplicationContext, header:bool):
             file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
     await ctx.channel.send(file=file)
 
-async def _send_vote_text(ctx: discord.ApplicationContext, name: str, author: discord.Member, constitutional: bool, treaty: bool, link: str, duration: int):
+async def _send_vote_text(ctx: discord.ApplicationContext, name: str, author: discord.Member, constitutional: bool, treaty: bool, legislative: bool, link: str, duration: int):
     the_name = await _format_definite_article(name=name)
     quorum = await _get_quorum(ctx=ctx)
     if constitutional:
-        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE CONSTITUTIONAL AMENDMENT]({link})\n\n**__ Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the amendment\n\n- **Nay** – Opposed to the amendment\n\n- **Abstain** - Neither in favor nor opposed\n"
+        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE CONSTITUTIONAL AMENDMENT]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the amendment\n\n- **Nay** – Opposed to the amendment\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "66,6"
     elif treaty:
-        header = f"## VOTING: {the_name.upper()} (TREATY)\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE TREATY]({link})\n\n**__ Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the signing of the treaty\n\n- **Nay** – Opposed to the signing of the treaty\n\n- **Abstain** - Neither in favor nor opposed\n"
+        header = f"## VOTING: {the_name.upper()} (TREATY)\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE TREATY]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the signing of the treaty\n\n- **Nay** – Opposed to the signing of the treaty\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
     else:
-        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE BILL]({link})\n\n**__ Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the bill\n\n- **Nay** – Opposed to the bill\n\n- **Abstain** - Neither in favor nor opposed\n"
+        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE BILL]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the bill\n\n- **Nay** – Opposed to the bill\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
-    footer = f"The voting period will last __{duration} hours__. If a Starborn loses their status during the voting period, they will no longer be eligible to vote, and their vote will be disregarded. Please note that the bill requires a {majority}% majority of Aye votes to pass. Abstain votes are registered but not counted. The quorum for this vote is **{quorum}** (10% of Starborn)."
+    if legislative:
+        footer = f"The voting period will last __{duration} hours__. If a Starborn loses their status during the voting period, they will no longer be eligible to vote, and their vote will be disregarded. Please note that the bill requires a {majority}% majority of Aye votes to pass. Abstain votes are registered but not counted. The quorum for this vote is **{quorum}** (10% of Starborn)."
+    else:
+        footer = f"The voting period will last __{duration} hours__. If a Starborn loses their status during the voting period, they will no longer be eligible to vote, and their vote will be disregarded. Please note that the bill requires a {majority}% majority of Aye votes to pass. Abstain votes are registered but not counted. There is **no quorum** for this vote."
     text = header + footer
     await ctx.channel.send(content=text)
 
@@ -213,8 +216,9 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 @discord.option("link", description="A link to the text of the proposal", type=discord.SlashCommandOptionType.string)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
+@discord.option("legislative", description="Is the proposal a legislative proposal? (this does not include Honorary Titles)", type=discord.SlashCommandOptionType.boolean, default=True)
 @discord.option("duration", description="Duration of the poll in hours (default: 48h)", type=discord.SlashCommandOptionType.integer, min_value=config["poll_durations"]["min"], max_value=config["poll_durations"]["max"], default=config["poll_durations"]["default"])
-async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, duration: int):
+async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, legislative: bool, duration: int):
     logger.info(f"Vote command sent by {ctx.user.id}")
 
     if isinstance(ctx.channel, discord.threads.Thread):
@@ -227,7 +231,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
                     await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
                     await _lock_thread(ctx=ctx)
                     await _send_image(ctx=ctx, header=True)
-                    await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, link=link, duration=duration)
+                    await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, legislative=legislative, link=link, duration=duration)
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
                     await _send_vote_status(ctx=ctx)
                     await _send_image(ctx=ctx, header=False)
@@ -272,7 +276,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 @discord.option("poll_msg", description="The URL of the poll (sent by the bot)")
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
-@discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer, min_value=7)
+@discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer, min_value=0)
 async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
     logger.info(f"Count command sent by {ctx.user.id}")
 
@@ -284,9 +288,19 @@ async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.
             if not (constitutional and treaty):
                 if poll_msg.poll is not None:
                     if "STATUS" in status_msg.content:
-                        await ctx.defer(ephemeral=True)
-                        await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, quorum=quorum)
-                        await ctx.respond(content="Success", ephemeral=True)
+                        if quorum == 0 or quorum >= 7: # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
+                            await ctx.defer(ephemeral=True)
+                            await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, quorum=quorum)
+                            await ctx.respond(content="Success", ephemeral=True)
+                        else:
+                            logger.info("Supplied quorum value is out of legal range")
+
+                            embed = discord.Embed(title = "Quorum value invalid", description = "The quorum value must either be zero (non-legislative proposal) or greater than / equal to seven (legislative proposal).")
+                            logger.debug("Embed object created")
+
+                            await ctx.respond(embed = embed, ephemeral = True)
+                            logger.info("Quorum out of range embed sent")
+
                     else:
                         logger.info("status_msg does not contain 'STATUS'")
 
