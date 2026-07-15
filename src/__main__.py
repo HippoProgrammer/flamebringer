@@ -1,76 +1,93 @@
 # import required libraries
 import logging  # log handler
-import os
-import sys
+import os # file handling
+import sys # stream handling
 import discord  # py-cord: discord bot framework
-import validators
-import datetime
-from yaml import safe_load as load_yaml
-from math import ceil
+import validators # string validation
+import datetime # datetime handling
+from yaml import safe_load as load_yaml # yaml parsing
+from math import ceil # ceiling function
 
-__version__ = "1.3.4"
+__version__ = "1.3.5"
 
+# configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s") # format [time] - [module] - [error level] - [message]
+handler.setFormatter(formatter) # attach the formatter to the handler
 logger.addHandler(handler)  # attach the handler to the logger
 logger.setLevel(logging.DEBUG)  # set the logs to output at debug verbosity
-logger.info("Logging started")
+logger.info("Logging started") 
 
-config_file = str(os.getenv("FLAMEBRINGER_CONFIG_FILE"))
-if not os.path.isfile(config_file): # check the config file actually exists
-    msg = "FLAMEBRINGER_CONFIG_FILE environment variable is not a valid path, cannot start"
-    logger.error(msg)
-    sys.exit()
-
-# read config file
-with open(config_file, "r") as file:
-    config = load_yaml(file)
-config = config["config"]
+# load config
+config_file = str(os.getenv("FLAMEBRINGER_CONFIG_FILE")) # get the config file path from the env var
+if not os.path.isfile(config_file): # check the config file actually exists: if not,
+    logger.error("FLAMEBRINGER_CONFIG_FILE environment variable is not a valid path, cannot start" ) # send an error message
+    sys.exit() # quit
+# if we get here, the config file must exist, so we
+with open(config_file, "r") as file: # open the config file
+    config = load_yaml(file) # parse it into a python object
+config = config["config"] # navigate into the first section - everything should be under this first key so we don't need to constantly reference it
 logger.info("Config loaded")
 
-with open(config["token_file"], "r") as file: # read the token file
+# load token
+token_file = config["token_file"] # get the token file path from the config file
+if not os.path.isfile(token_file): # check the token file actually exists: if not,
+    logger.error("token_file configuration value is not a valid path, cannot start") # send an error message
+    sys.exit() # quit
+# if we get here, the token file must exist, so we
+with open(token_file, "r") as file: # read the token file
     token = file.read()
 logger.info('Token loaded')
 
 # create the Bot object
-intents = discord.Intents.default()
-intents.members = True
-bot = discord.Bot(intents = intents)  # create a bot instance
+intents = discord.Intents.default() # we need default intents so the bot actually functions well
+intents.members = True # we also need members permission to calculate quorum, as that requires fetching the full member list of a role which needs the members intent
+bot = discord.Bot(intents = intents)  # create a bot instance, with the previously set intents
 logger.debug("Bot object created")
 
-async def _get_quorum(ctx: discord.ApplicationContext):
-    quorum_role = ctx.guild.get_role(int(config["quorum_role_id"]))
-    count = len([member for member in quorum_role.members if not(member.bot)])
-    count_quorum = ceil(count / 10)
-    quorum = max(count_quorum, 7)
+# basic discord functions (calculate quorum, lock threads, set tags etc.)
+async def _get_quorum(ctx: discord.ApplicationContext): # get quorum based on a pre-configured role
+    quorum_role = ctx.guild.get_role(int(config["quorum_role_id"])) # fetch the role id from the config and get the Role object from the bot
+    count = len([member for member in quorum_role.members if not(member.bot)]) # use a list comprehension to only count members who are not bots
+    count_quorum = ceil(count / 10) # quorum is 10%, rounded up
+    quorum = max(count_quorum, 7) # but if 10% is less than 7, we use 7
     return quorum
 
-async def _set_vote_tag(ctx: discord.ApplicationContext):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        if isinstance(ctx.channel.parent, discord.ForumChannel):
-            tag = ctx.channel.parent.get_tag(config["vote_tag_id"])
-            await ctx.channel.edit(applied_tags=[tag])
+async def _set_tag(ctx: discord.ApplicationContext, tag:str): # set a tag on a thread, CLEARING ALL PREVIOUS TAGS
+    if isinstance(ctx.channel, discord.threads.Thread): # check that the channel is actually a thread channel
+        if isinstance(ctx.channel.parent, discord.ForumChannel): # check that the thread channel is in a forum channel, so it actually supports tags
+            tag = ctx.channel.parent.get_tag(config[f"{tag}_tag_id"]) # if those are both true, try to get the requested ForumTag object from the parent forum channel
+            await ctx.channel.edit(applied_tags=[tag]) # apply that tag to the thread
 
-async def _set_pass_tag(ctx: discord.ApplicationContext):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        if isinstance(ctx.channel.parent, discord.ForumChannel):
-            tag = ctx.channel.parent.get_tag(config["passed_tag_id"])
-            await ctx.channel.edit(applied_tags=[tag])
+async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True): # lock or unlock a thread
+    if isinstance(ctx.channel, discord.threads.Thread): # if it's a thread, it can be locked or unlocked
+        await ctx.channel.edit(locked=lock) # so set the status requested
 
-async def _set_fail_tag(ctx: discord.ApplicationContext):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        if isinstance(ctx.channel.parent, discord.ForumChannel):
-            tag = ctx.channel.parent.get_tag(config["failed_tag_id"])
-            await ctx.channel.edit(applied_tags=[tag])
-
-async def _format_definite_article(name: str):
-    if "the" in name.lower():
-        the_name = name
-    else:
-        the_name = f"the {name}"
+# basic python functions (string formatting etc.)
+async def _format_definite_article(name: str): # format a name to have correct definite article (the)
+    if "the" in name.lower(): # if 'the' is in the name
+        the_name = name # the name should be "the [x]"
+    else: # otherwise
+        the_name = f"the {name}" # the name should be the "[x]"
     return the_name
+
+# command backend functions
+# halls commands
+async def _send_lock_message(ctx: discord.ApplicationContext):
+    await ctx.channel.send(f"<@&{config['fw_permission_role_ids'][0]}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
+
+async def _send_vote_status(ctx: discord.ApplicationContext):
+    await ctx.channel.send("## __STATUS__: AT VOTE")
+
+async def _send_image(ctx: discord.ApplicationContext, header:bool):
+    if header:
+        with open(config["image_paths"]["header"], "rb") as image:
+            file = discord.File(fp=image, filename="fw_header.png", description="Seal of the Office of the Flamewarden")
+    else:
+        with open(config["image_paths"]["footer"], "rb") as image:
+            file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
+    await ctx.channel.send(file=file)
 
 async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: bool, aye: int, nay: int):
     the_name = await _format_definite_article(name=name)
@@ -87,6 +104,8 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: 
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle.**"
         else:
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle. A petition to override the veto may now be submitted within 72 hours in this channel. The petition must receive the support of at least five Starborn, including the original proposer, to proceed.**"
+            await _set_thread_lock(ctx=ctx, lock=False)
+            
     tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay})."
 
     await ctx.channel.send(content=tc_approval)
@@ -138,18 +157,9 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
     if passed == "PASSED" or passed == "APPROVED":
-        await _set_pass_tag(ctx=ctx)
+        await _set_tag(ctx=ctx, tag="passed")
     elif passed == "FAILED" or passed == "REJECTED":
-        await _set_fail_tag(ctx=ctx)
-
-async def _send_image(ctx: discord.ApplicationContext, header:bool):
-    if header:
-        with open(config["image_paths"]["header"], "rb") as image:
-            file = discord.File(fp=image, filename="fw_header.png", description="Seal of the Office of the Flamewarden")
-    else:
-        with open(config["image_paths"]["footer"], "rb") as image:
-            file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
-    await ctx.channel.send(file=file)
+        await _set_tag(ctx=ctx, tag="failed")
 
 async def _send_vote_text(ctx: discord.ApplicationContext, name: str, author: discord.Member, constitutional: bool, treaty: bool, legislative: bool, link: str, duration: int):
     the_name = await _format_definite_article(name=name)
@@ -184,13 +194,7 @@ async def _create_vote_poll(ctx: discord.ApplicationContext, name: str, treaty: 
     poll = discord.Poll(question=title, answers=options, duration=duration)
     await ctx.channel.send(poll=poll)
 
-async def _send_lock_message(ctx: discord.ApplicationContext):
-    await ctx.channel.send(f"<@&{config['fw_permission_role_ids'][0]}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
-
-async def _lock_thread(ctx: discord.ApplicationContext):
-    if isinstance(ctx.channel, discord.threads.Thread):
-        await ctx.channel.edit(locked=True)
-
+# bot events
 @bot.event
 async def on_ready() -> None:
     activity = discord.Game("Warding the Flame...")
@@ -198,7 +202,21 @@ async def on_ready() -> None:
     await bot.change_presence(activity=activity, status=status)
     logger.info("Bot started, ready for interaction")
 
-# create info slash command
+@bot.event
+async def on_application_command_error(ctx:discord.ApplicationContext, error:discord.DiscordException): # error handler
+    if type(error) is discord.ext.commands.MessageNotFound:
+        logger.info("Message was not found")
+
+        embed = discord.Embed(title = "Message not Found", description = "The message provided was not found.")
+        logger.debug("Embed object created")
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info("Message not found embed sent")
+    else:
+        logger.error(error, stack_info = True, exc_info = True)
+        await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred.')
+
+# slash commands
 @bot.slash_command(name="info", description="Information about the bot")
 async def info(ctx: discord.ApplicationContext) -> None:
     logger.info(f"Info command sent by {ctx.user.id}")
@@ -229,13 +247,13 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
                 if not (constitutional and treaty):
                     await ctx.defer(ephemeral=True)
                     await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
-                    await _lock_thread(ctx=ctx)
+                    await _set_thread_lock(ctx=ctx)
                     await _send_image(ctx=ctx, header=True)
                     await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, legislative=legislative, link=link, duration=duration)
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
                     await _send_vote_status(ctx=ctx)
                     await _send_image(ctx=ctx, header=False)
-                    await _set_vote_tag(ctx=ctx)
+                    await _set_tag(ctx=ctx, tag="vote")
                     await ctx.respond(content="Success", ephemeral=True)
                 else:
                     logger.info("Conflicting options selected: bill cannot be both constitutional and treaty")
