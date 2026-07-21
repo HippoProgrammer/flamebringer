@@ -8,7 +8,7 @@ import datetime # datetime handling
 from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 
-__version__ = "1.4.0b1"
+__version__ = "1.4.0b2"
 
 # configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
@@ -69,7 +69,7 @@ async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True): # loc
 
 # basic python functions (string formatting etc.)
 async def _format_definite_article(name: str): # format a name to have correct definite article (the)
-    if "the" in name.lower(): # if 'the' is in the name
+    if "the" in name.lower() or name.split(' ')[0].lower() == 'repeal': # if 'the' is in the name
         the_name = name # the name should be "the [x]"
     else: # otherwise
         the_name = f"the {name}" # the name should be the "[x]"
