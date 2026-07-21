@@ -1,4 +1,5 @@
 config:
+  log_verbosity: 10
   token_file: /run/secrets/bot-token
   error_ping: 0
   fw_permission_role_ids:

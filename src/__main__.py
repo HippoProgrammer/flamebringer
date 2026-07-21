@@ -16,7 +16,7 @@ handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to std
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s") # format [time] - [module] - [error level] - [message]
 handler.setFormatter(formatter) # attach the formatter to the handler
 logger.addHandler(handler)  # attach the handler to the logger
-logger.setLevel(logging.DEBUG)  # set the logs to output at debug verbosity
+logger.setLevel(logging.DEBUG)  # set the logs to output at debug verbosity, at least until the config has been loaded
 logger.info("Logging started")
 
 # load config
@@ -29,6 +29,9 @@ with open(config_file, "r") as file: # open the config file
     config = load_yaml(file) # parse it into a python object
 config = config["config"] # navigate into the first section - everything should be under this first key so we don't need to constantly reference it
 logger.info("Config loaded")
+
+# now we have the config, we should immediately configure the logging verbosity
+logger.setLevel(config["log_verbosity"]) # better hope that the config provided a valid number as we do no validation on this at all
 
 # load token
 token_file = config["token_file"] # get the token file path from the config file
