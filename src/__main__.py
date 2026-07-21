@@ -98,13 +98,16 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: 
             fw_approval = f"**{the_name.title()} has passed the Halls of Solaris and has been approved by the Triune Circle. As of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is now formally ratified.**"
         else:
             fw_approval = f"**{the_name.title()} has passed the Halls of Solaris and has been approved by the Triune Circle. As of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is now formally adopted into the Constitution.**"
+        await _set_tag(ctx=ctx, tag="passed") # as these do not get passed until TC approval is given, we wait until this command
     else:
         status = "rejected"
         if treaty:
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle.**"
+            await _set_tag(ctx=ctx, tag="failed")
         else:
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle. A petition to override the veto may now be submitted within 72 hours in this channel. The petition must receive the support of at least five Starborn, including the original proposer, to proceed.**"
             await _set_thread_lock(ctx=ctx, lock=False)
+            await _set_tag(ctx=ctx, tag="vote") # if a motion can be made, its more voting than anything else
 
     tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay})."
 
@@ -159,7 +162,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {vote_total}\n\nAye = {round(aye_percent * 100, 1)}%"
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
-    if passed == "PASSED" or passed == "APPROVED":
+    if passed == "PASSED" and not (constitutional or treaty): # constitutional amendments  and treaties should only be marked as passed after TC approval. as they use 'APPROVED' as their status, this would serve on its own as a check against them, but extra steps are added to future proof against a change of the specific word used
         await _set_tag(ctx=ctx, tag="passed")
     elif passed == "FAILED" or passed == "REJECTED":
         await _set_tag(ctx=ctx, tag="failed")
