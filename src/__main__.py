@@ -17,7 +17,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter) # attach the formatter to the handler
 logger.addHandler(handler)  # attach the handler to the logger
 logger.setLevel(logging.DEBUG)  # set the logs to output at debug verbosity
-logger.info("Logging started") 
+logger.info("Logging started")
 
 # load config
 config_file = str(os.getenv("FLAMEBRINGER_CONFIG_FILE")) # get the config file path from the env var
@@ -75,7 +75,7 @@ async def _format_definite_article(name: str): # format a name to have correct d
 # command backend functions
 # halls commands
 async def _send_lock_message(ctx: discord.ApplicationContext):
-    await ctx.channel.send(f"<@&{config['fw_permission_role_ids'][0]}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
+    await ctx.channel.send(f"<@&{config['fw_primary_role_id']}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
@@ -105,8 +105,11 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: 
         else:
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle. A petition to override the veto may now be submitted within 72 hours in this channel. The petition must receive the support of at least five Starborn, including the original proposer, to proceed.**"
             await _set_thread_lock(ctx=ctx, lock=False)
-            
+
     tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay})."
+
+    for id in config["fw_announcement_role_ids"]:
+        tc_approval = f"<@&{id}> " + tc_approval # append a ping of every role in fw_announcement_role_ids to the beginning of the tc_approval string
 
     await ctx.channel.send(content=tc_approval)
     await ctx.channel.send(content=fw_approval)
