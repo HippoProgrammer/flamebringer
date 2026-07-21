@@ -8,7 +8,7 @@ import datetime # datetime handling
 from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 
-__version__ = "1.3.5"
+__version__ = "1.3.5b1"
 
 # configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
