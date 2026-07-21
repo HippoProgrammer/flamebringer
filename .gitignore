@@ -1,4 +1,5 @@
 **/secrets/**.conf
+**/conf/**.yaml
 
 **/__pycache__/**
 **/*.log
