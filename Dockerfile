@@ -1,5 +1,5 @@
 # begin with the base Alpine python image
-FROM python:3.14.6-alpine3.23
+FROM python:3.15.0b4-alpine3.23
 # create a directory to store the application
 WORKDIR /usr/local/ns-flamebringer
 
