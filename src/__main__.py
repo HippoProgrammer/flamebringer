@@ -8,7 +8,7 @@ import datetime # datetime handling
 from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 
-__version__ = "1.4.1"
+__version__ = "1.5.0b1"
 
 # configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
@@ -401,6 +401,49 @@ async def approve(ctx: discord.ApplicationContext, name: str, treaty: bool, aye:
 
         await ctx.respond(embed = embed, ephemeral = True)
         logger.info("Wrong channel type embed sent")
+
+manual = halls.create_subgroup("manual", "Commands allowing manual operation of the bot")
+@manual.command(name="poll", description="Send a vote poll")
+@discord.option("name", description="The name of the proposal going to vote", type=discord.SlashCommandOptionType.string)
+@discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
+@discord.option("duration", description="Duration of the poll in hours (default: 48h)", type=discord.SlashCommandOptionType.integer, min_value=config["poll_durations"]["min"], max_value=config["poll_durations"]["max"], default=config["poll_durations"]["default"])
+async def poll(ctx: discord.ApplicationContext, name: str, treaty: bool, duration: int):
+    logger.info(f"Manual poll command sent by {ctx.user.id}")
+
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    if permitted:
+        logger.info("User is authenticated")
+        await ctx.defer(ephemeral=True)
+        await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
+        await ctx.respond(content="Success", ephemeral=True)
+    else:
+        logger.info("User is not authenticated")
+
+        embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+        logger.debug("Embed object created")
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info("No permissions embed sent")
+
+@manual.command(name="image", description="Send an official header or footer image")
+@discord.option("header", description="Should the header image be provided? (selecting False will lead to the footer image being provided)", type=discord.SlashCommandOptionType.boolean)
+async def image(ctx: discord.ApplicationContext, header: bool):
+    logger.info(f"Manual image command sent by {ctx.user.id}")
+
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    if permitted:
+        logger.info("User is authenticated")
+        await ctx.defer(ephemeral=True)
+        await _send_image(ctx=ctx, header=header)
+        await ctx.respond(content="Success", ephemeral=True)
+    else:
+        logger.info("User is not authenticated")
+
+        embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+        logger.debug("Embed object created")
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info("No permissions embed sent")
 
 @bot.event
 async def on_application_command_error(ctx:discord.ApplicationContext, error:discord.DiscordException):
