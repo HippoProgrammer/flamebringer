@@ -8,7 +8,7 @@ import datetime # datetime handling
 from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 
-__version__ = "1.5.0b1"
+__version__ = "1.4.1b1"
 
 # configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
@@ -155,7 +155,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
         else:
             if aye_percent > (3/5):
                 passed = "PASSED"
-                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris and as of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is in effect.**"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris and as of <t:{int(round(poll.expiry.timestamp(),0))}:f> it is in effect.**"
             else:
                 passed = "FAILED"
                 sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
