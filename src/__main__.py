@@ -75,6 +75,18 @@ async def _format_definite_article(name: str): # format a name to have correct d
         the_name = f"the {name}" # the name should be the "[x]"
     return the_name
 
+async def _format_member_list(members: list[discord.Member]):
+    if len(members) == 1: # if there is only one member in the list
+        return f"<@{members[0].id}>" # just return their user ID formatted as a ping
+    else:
+        formatted_members = []
+        for member in range(len(members)):
+            if member == len(members) - 1: # if this is the final member
+                formatted_members.append(f"and <@{members[member].id}>")
+            else:
+                formatted_members.append(f"<@{members[member].id}>")
+        return ", ".join(formatted_members)
+
 # command backend functions
 # halls commands
 async def _send_lock_message(ctx: discord.ApplicationContext):
@@ -170,17 +182,17 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     elif passed == "FAILED" or passed == "REJECTED":
         await _set_tag(ctx=ctx, tag="failed")
 
-async def _send_vote_text(ctx: discord.ApplicationContext, name: str, author: discord.Member, constitutional: bool, treaty: bool, legislative: bool, link: str, duration: int):
+async def _send_vote_text(ctx: discord.ApplicationContext, name: str, authors: list[discord.Member], constitutional: bool, treaty: bool, legislative: bool, link: str, duration: int):
     the_name = await _format_definite_article(name=name)
     quorum = await _get_quorum(ctx=ctx)
     if constitutional:
-        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE CONSTITUTIONAL AMENDMENT]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the amendment\n\n- **Nay** – Opposed to the amendment\n\n- **Abstain** - Neither in favor nor opposed\n"
+        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by {_format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE CONSTITUTIONAL AMENDMENT]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the amendment\n\n- **Nay** – Opposed to the amendment\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "66,6"
     elif treaty:
-        header = f"## VOTING: {the_name.upper()} (TREATY)\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE TREATY]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the signing of the treaty\n\n- **Nay** – Opposed to the signing of the treaty\n\n- **Abstain** - Neither in favor nor opposed\n"
+        header = f"## VOTING: {the_name.upper()} (TREATY)\n{the_name.title()} by {_format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE TREATY]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the signing of the treaty\n\n- **Nay** – Opposed to the signing of the treaty\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
     else:
-        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by <@{author.id}> is now at vote.\n\n**__Proposal__**:\n[LINK TO THE BILL]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the bill\n\n- **Nay** – Opposed to the bill\n\n- **Abstain** - Neither in favor nor opposed\n"
+        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by {_format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE BILL]({link})\n\n**__Discussion__**:\n[LINK TO THE DISCUSSION THREAD]({ctx.channel.jump_url})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the bill\n\n- **Nay** – Opposed to the bill\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
     if legislative:
         footer = f"The voting period will last __{duration} hours__. If a Starborn loses their status during the voting period, they will no longer be eligible to vote, and their vote will be disregarded. Please note that the bill requires a {majority}% majority of Aye votes to pass. Abstain votes are registered but not counted. The quorum for this vote is **{quorum}** (10% of Starborn)."
@@ -239,15 +251,19 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 
 @halls.command(name="vote", description="Prepare a vote")
 @discord.option("name", description="The name of the proposal going to vote", type=discord.SlashCommandOptionType.string)
-@discord.option("author", description="The Discord account of the author of the proposal")
+@discord.option("primary_author", description="The Discord account of the primary author of the proposal", type=discord.SlashCommandOptionType.user)
 @discord.option("link", description="A link to the text of the proposal", type=discord.SlashCommandOptionType.string)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("legislative", description="Is the proposal a legislative proposal? (this does not include Honorary Titles)", type=discord.SlashCommandOptionType.boolean, default=True)
 @discord.option("duration", description="Duration of the poll in hours (default: 48h)", type=discord.SlashCommandOptionType.integer, min_value=config["poll_durations"]["min"], max_value=config["poll_durations"]["max"], default=config["poll_durations"]["default"])
-async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Member, link: str, treaty: bool, constitutional: bool, legislative: bool, duration: int):
+@discord.option("secondary_author_1", description="The Discord account of a secondary author of the proposal", required=False, type=discord.SlashCommandOptionType.user)
+@discord.option("secondary_author_2", description="The Discord account of another secondary author of the proposal", required=False, type=discord.SlashCommandOptionType.user)
+@discord.option("secondary_author_3", description="The Discord account of a third secondary author of the proposal", required=False, type=discord.SlashCommandOptionType.user)
+async def vote(ctx: discord.ApplicationContext, name: str, primary_author: discord.Member, link: str, treaty: bool, constitutional: bool, legislative: bool, duration: int, secondary_author_1: discord.Member, secondary_author_2: discord.Member, secondary_author_3: discord.Member):
     logger.info(f"Vote command sent by {ctx.user.id}")
-
+    logger.info(secondary_author_1)
+    logger.info(secondary_author_1.id)
     if isinstance(ctx.channel, discord.threads.Thread):
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
         if permitted:
@@ -258,7 +274,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
                     await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
                     await _set_thread_lock(ctx=ctx)
                     await _send_image(ctx=ctx, header=True)
-                    await _send_vote_text(ctx=ctx, name=name, author=author, constitutional=constitutional, treaty=treaty, legislative=legislative, link=link, duration=duration)
+                    await _send_vote_text(ctx=ctx, name=name, constitutional=constitutional, treaty=treaty, legislative=legislative, link=link, duration=duration)
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
                     await _send_vote_status(ctx=ctx)
                     await _send_image(ctx=ctx, header=False)
