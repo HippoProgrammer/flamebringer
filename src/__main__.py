@@ -69,24 +69,21 @@ async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True): # loc
         await ctx.channel.edit(locked=lock) # so set the status requested
 
 # basic python functions (string formatting etc.)
-class ProposalType(Enum):
-    legislative = 1
-    constitutional = 2
-    honorary = 3
-    holiday = 4
-    treaty = 5
-
-    legislatives = nonmember([ProposalType.legislative, ProposalType.constitutional, ProposalType.holiday, ProposalType.treaty])
-    nonlegislatives = nonmember([ProposalType.honorary])
-    approvables = nonmember([ProposalType.constitutional, ProposalType.honorary, ProposalType.treaty])
-    nonapprovables = nonmember([ProposalType.legislative, ProposalType.holiday])
+class ProposalType(Flag):
+    legislative = auto()
+    constitutional = auto()
+    honorary = auto()
+    holiday = auto()
+    treaty = auto()
+    legislatives = legislative | constitutional | holiday | treaty
+    approvables = constitutional | honorary | treaty
 
     choices = nonmember([
-        discord.OptionChoice("Legislative (New Law / Amendment / Repeal)", value=ProposalType.legislative),
-        discord.OptionChoice("Constitutional Amendment", value=ProposalType.constitutional),
-        discord.OptionChoice("Honorary Title Nomination", value=ProposalType.honorary),
-        discord.OptionChoice("Regional Holiday Proposal", value=ProposalType.holiday),
-        discord.OptionChoice("Treaty", value=ProposalType.treaty)
+        discord.OptionChoice("Legislative (New Law / Amendment / Repeal)", value=legislative),
+        discord.OptionChoice("Constitutional Amendment", value=constitutional),
+        discord.OptionChoice("Honorary Title Nomination", value=honorary),
+        discord.OptionChoice("Regional Holiday Proposal", value=holiday),
+        discord.OptionChoice("Treaty", value=treaty)
     ])
 
     @property
@@ -98,7 +95,7 @@ class ProposalType(Enum):
 
     @property
     def voting_threshold(self):
-        if self is ProposalType.constutional:
+        if self is ProposalType.constitutional:
             return (2/3)
         elif self is ProposalType.honorary:
             return (1/2)
