@@ -7,7 +7,7 @@ import validators # string validation
 import datetime # datetime handling
 from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
-from enum import Enum, nonmember
+from enum import Flag, nonmember, auto
 
 __version__ = "1.6.0b3"
 
