@@ -81,14 +81,13 @@ class ProposalType(Enum):
     approvables = enum.nonmember([ProposalType.constitutional, ProposalType.honorary, ProposalType.treaty])
     nonapprovables = enum.nonmember([ProposalType.legislative, ProposalType.holiday])
 
-    @nonmember
-    choices = [
+    choices = enum.nonmember([
         discord.OptionChoice("Legislative (New Law / Amendment / Repeal)", value=ProposalType.legislative),
         discord.OptionChoice("Constitutional Amendment", value=ProposalType.constitutional),
         discord.OptionChoice("Honorary Title Nomination", value=ProposalType.honorary),
         discord.OptionChoice("Regional Holiday Proposal", value=ProposalType.holiday)
         discord.OptionChoice("Treaty", value=ProposalType.treaty)
-    ]
+    ])
 
     @property
     def is_legislative(self):
