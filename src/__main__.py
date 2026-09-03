@@ -330,7 +330,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
     type=discord.SlashCommandOptionType.user)
 async def vote(ctx: discord.ApplicationContext, name: str, primary_author: discord.Member, link: str, type: ProposalType, duration: int, secondary_author_1: discord.Member, secondary_author_2: discord.Member, secondary_author_3: discord.Member):
     logger.info(f"Vote command sent by {ctx.user.id}")
-    authors = [author for author in [primary_author, secondary_author_1, secondary_author_2, secondary_author_3] if x is not None]
+    authors = [author for author in [primary_author, secondary_author_1, secondary_author_2, secondary_author_3] if author is not None]
     if isinstance(ctx.channel, discord.threads.Thread):
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
         if permitted:
