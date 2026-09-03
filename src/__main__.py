@@ -147,8 +147,8 @@ async def _send_lock_message(ctx: discord.ApplicationContext):
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
 
-async def _send_image(ctx: discord.ApplicationContext, header:bool):
-    if header:
+async def _send_image(ctx: discord.ApplicationContext, type: str):
+    if type == 'header':
         with open(config["image_paths"]["header"], "rb") as image:
             file = discord.File(fp=image, filename="fw_header.png", description="Seal of the Office of the Flamewarden")
     else:
@@ -528,18 +528,29 @@ async def approve(ctx: discord.ApplicationContext, name: str, type: ProposalType
         logger.info("Wrong channel type embed sent")
 
 manual = halls.create_subgroup("manual", "Commands allowing manual operation of the bot")
-@manual.command(name="poll", description="Send a vote poll")
-@discord.option("name", description="The name of the proposal going to vote", type=discord.SlashCommandOptionType.string)
-@discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
-@discord.option("duration", description="Duration of the poll in hours (default: 48h)", type=discord.SlashCommandOptionType.integer, min_value=config["poll_durations"]["min"], max_value=config["poll_durations"]["max"], default=config["poll_durations"]["default"])
-async def poll(ctx: discord.ApplicationContext, name: str, treaty: bool, duration: int):
+@manual.command(name="poll",
+    description="Send a vote poll")
+@discord.option("name",
+    description="The name of the proposal going to vote",
+    type=discord.SlashCommandOptionType.string)
+@discord.option("type",
+    description="The type of the proposal",
+    type=ProposalType,
+    choices=ProposalType.choices)
+@discord.option("duration",
+    description="Duration of the poll in hours (default: 48h)",
+    type=discord.SlashCommandOptionType.integer,
+    min_value=config["poll_durations"]["min"],
+    max_value=config["poll_durations"]["max"],
+    default=config["poll_durations"]["default"])
+async def poll(ctx: discord.ApplicationContext, name: str, type: ProposalType, duration: int):
     logger.info(f"Manual poll command sent by {ctx.user.id}")
 
     permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
     if permitted:
         logger.info("User is authenticated")
         await ctx.defer(ephemeral=True)
-        await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
+        await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
         embed = discord.Embed(title = "Success", description = "The command succeeded.")
         await ctx.respond(embed = embed, ephemeral=True)
     else:
@@ -552,15 +563,18 @@ async def poll(ctx: discord.ApplicationContext, name: str, treaty: bool, duratio
         logger.info("No permissions embed sent")
 
 @manual.command(name="image", description="Send an official header or footer image")
-@discord.option("header", description="Should the header image be provided? (selecting False will lead to the footer image being provided)", type=discord.SlashCommandOptionType.boolean)
-async def image(ctx: discord.ApplicationContext, header: bool):
+@discord.option("type",
+    description="Which image should be provided?",
+    type=discord.SlashCommandOptionType.string,
+    choices=["header", "footer"])
+async def image(ctx: discord.ApplicationContext, type: str):
     logger.info(f"Manual image command sent by {ctx.user.id}")
 
     permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
     if permitted:
         logger.info("User is authenticated")
         await ctx.defer(ephemeral=True)
-        await _send_image(ctx=ctx, header=header)
+        await _send_image(ctx=ctx, type=type)
         embed = discord.Embed(title = "Success", description = "The command succeeded.")
         await ctx.respond(embed = embed, ephemeral=True)
     else:
