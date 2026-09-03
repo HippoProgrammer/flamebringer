@@ -575,6 +575,6 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
         logger.info("Message not found embed sent")
     else:
         logger.error(error, stack_info = True, exc_info = True)
-        await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred.')
+        await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred (`{str(error)}`).')
 
 bot.run(token)
