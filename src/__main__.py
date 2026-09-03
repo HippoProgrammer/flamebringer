@@ -80,7 +80,7 @@ class ProposalType(Flag):
 
     @property
     def is_legislative(self):
-        if self in legislatives:
+        if self in ProposalType.legislatives:
             return True
         else:
             return False
@@ -96,7 +96,7 @@ class ProposalType(Flag):
 
     @property
     def is_approvable(self):
-        if self in approvables:
+        if self in ProposalType.approvables:
             return True
         else:
             return False
