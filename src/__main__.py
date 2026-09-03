@@ -85,7 +85,7 @@ class ProposalType(Enum):
         discord.OptionChoice("Legislative (New Law / Amendment / Repeal)", value=ProposalType.legislative),
         discord.OptionChoice("Constitutional Amendment", value=ProposalType.constitutional),
         discord.OptionChoice("Honorary Title Nomination", value=ProposalType.honorary),
-        discord.OptionChoice("Regional Holiday Proposal", value=ProposalType.holiday)
+        discord.OptionChoice("Regional Holiday Proposal", value=ProposalType.holiday),
         discord.OptionChoice("Treaty", value=ProposalType.treaty)
     ])
 
