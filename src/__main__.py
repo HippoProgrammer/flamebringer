@@ -348,11 +348,11 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
                 await ctx.defer(ephemeral=True)
                 await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
                 await _set_thread_lock(ctx=ctx)
-                await _send_image(ctx=ctx, header=True)
+                await _send_image(ctx=ctx, type="header")
                 await _send_vote_text(ctx=ctx, name=name, authors=authors, type=type, link=link, duration=duration)
                 await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
                 await _send_vote_status(ctx=ctx)
-                await _send_image(ctx=ctx, header=False)
+                await _send_image(ctx=ctx, type="header")
                 await _set_tag(ctx=ctx, tag="vote")
                 embed = discord.Embed(title = "Success", description = "The command succeeded.")
                 await ctx.respond(embed = embed, ephemeral=True)
