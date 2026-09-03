@@ -9,7 +9,7 @@ from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 from enum import Enum
 
-__version__ = "1.6.0b1"
+__version__ = "1.6.0b2"
 
 # configure logging
 logger = logging.getLogger("flamewarden")  # get the logger for this script
@@ -365,7 +365,8 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
                 await _send_vote_status(ctx=ctx)
                 await _send_image(ctx=ctx, header=False)
                 await _set_tag(ctx=ctx, tag="vote")
-                await ctx.respond(content="Success", ephemeral=True)
+                embed = discord.Embed(title = "Success", description = "The command succeeded.")
+                await ctx.respond(embed = embed, ephemeral=True)
             else:
                 logger.info("Invalid URL provided: valid URL must be provided")
 
@@ -420,7 +421,8 @@ async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.
                     if quorum == 0 or quorum >= 7: # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
                         await ctx.defer(ephemeral=True)
                         await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, type=type, quorum=quorum)
-                        await ctx.respond(content="Success", ephemeral=True)
+                        embed = discord.Embed(title = "Success", description = "The command succeeded.")
+                        await ctx.respond(embed = embed, ephemeral=True)
                     else:
                         logger.info("Supplied quorum value is out of legal range")
 
@@ -498,7 +500,8 @@ async def approve(ctx: discord.ApplicationContext, name: str, type: ProposalType
             if type.is_approvable:
                 await ctx.defer(ephemeral=True)
                 await _send_tc_approval(ctx=ctx, name=name, type=type, aye=aye, nay=nay, abstain=abstain)
-                await ctx.respond(content="Success", ephemeral=True)
+                embed = discord.Embed(title = "Success", description = "The command succeeded.")
+                await ctx.respond(embed = embed, ephemeral=True)
             else:
                 logger.info("Proposal is not approvable")
 
@@ -537,7 +540,8 @@ async def poll(ctx: discord.ApplicationContext, name: str, treaty: bool, duratio
         logger.info("User is authenticated")
         await ctx.defer(ephemeral=True)
         await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
-        await ctx.respond(content="Success", ephemeral=True)
+        embed = discord.Embed(title = "Success", description = "The command succeeded.")
+        await ctx.respond(embed = embed, ephemeral=True)
     else:
         logger.info("User is not authenticated")
 
@@ -557,7 +561,8 @@ async def image(ctx: discord.ApplicationContext, header: bool):
         logger.info("User is authenticated")
         await ctx.defer(ephemeral=True)
         await _send_image(ctx=ctx, header=header)
-        await ctx.respond(content="Success", ephemeral=True)
+        embed = discord.Embed(title = "Success", description = "The command succeeded.")
+        await ctx.respond(embed = embed, ephemeral=True)
     else:
         logger.info("User is not authenticated")
 
