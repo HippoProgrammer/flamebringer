@@ -9,7 +9,7 @@ from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 from enum import Flag, nonmember, auto
 
-__version__ = "1.6.0b3"
+__version__ = "1.6.0b4"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
@@ -81,10 +81,7 @@ class ProposalType(Flag):
 
     @property
     def is_legislative(self):
-        if self in ProposalType.legislatives:
-            return True
-        else:
-            return False
+        return (self in ProposalType.legislatives)
 
     @property
     def voting_threshold(self):
@@ -97,10 +94,7 @@ class ProposalType(Flag):
 
     @property
     def is_approvable(self):
-        if self in ProposalType.approvables:
-            return True
-        else:
-            return False
+        return (self in ProposalType.approvables)
 
 async def _format_definite_article(name: str): # format a name to have correct definite article (the)
     if "the" in name.lower() or name.split(' ')[0].lower() == 'repeal': # if 'the' is in the name
@@ -414,7 +408,7 @@ async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, 
             if poll_msg is not None and status_msg is not None: # if both have been provided or can be automatically fetched
                 if poll_msg.poll is not None: # do a final check in case this is manually entered
                     if "STATUS" in status_msg.content:
-                        if quorum == 0 or quorum >= 7: # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
+                        if (quorum == 0 and not type.is_legislative) or (quorum >= 7 and type.is_legislative): # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
                             await ctx.defer(ephemeral=True)
                             await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, type=type, quorum=quorum)
                             embed = discord.Embed(title = "Success", description = "The command succeeded.")
