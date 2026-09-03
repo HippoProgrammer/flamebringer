@@ -47,6 +47,7 @@ logger.info('Token loaded')
 # create the Bot object
 intents = discord.Intents.default() # we need default intents so the bot actually functions well
 intents.members = True # we also need members permission to calculate quorum, as that requires fetching the full member list of a role which needs the members intent
+intents.messages = True # we need this to read our own messages, annoyingly
 bot = discord.Bot(intents = intents)  # create a bot instance, with the previously set intents
 logger.debug("Bot object created")
 
@@ -179,6 +180,15 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, type: Pr
 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
+
+async def _get_past_message_from_current_thread(ctx: discord.ApplicationContext, type: str) -> discord.Message | None:
+    async for message in ctx.channel.history(limit = 4, oldest_first = False): # seeing how this is only linked to count, and that is only run directly after a vote, it is safest to limit to 4
+        if message.author == ctx.guild.me: # if the message author is the same as the object representing the bot user in this guild
+            if type == 'poll' and message.content == '' and message.poll is not None: # if we're looking for polls and we find a message with no text and a poll, authored by the bot
+                return message
+            elif type == 'status' and '## __STATUS__: ' in message.content: # if we're looking for status msesages and we find a message with the status heading authored by the bot
+                return message
+    return None
 
 async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationContext, name:str, status_msg:discord.Message, poll_msg:discord.Message, type: ProposalType, quorum: int):
     the_name = await _format_definite_article(name=name)
@@ -377,10 +387,6 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
     description="Edit the vote status when the vote ends")
 @discord.option("name",
     description="Name of the proposal")
-@discord.option("status_msg",
-    description="The URL of the vote status message (sent by the bot)")
-@discord.option("poll_msg",
-    description="The URL of the poll (sent by the bot)")
 @discord.option("type",
     description="The type of the proposal",
     type=ProposalType )
@@ -388,45 +394,63 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
     description="Quorum for the vote (on vote text)",
     type=discord.SlashCommandOptionType.integer,
     min_value=0)
-async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, type: ProposalType, quorum: int):
+@discord.option("status_msg",
+    description="The URL of the vote status message (sent by the bot) - automatically filled if not given",
+    required = None)
+@discord.option("poll_msg",
+    description="The URL of the poll (sent by the bot) - automatically filled if not given",
+    required = None)
+async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, quorum: int, status_msg: discord.Message, poll_msg: discord.Message):
     logger.info(f"Count command sent by {ctx.user.id}")
 
     if isinstance(ctx.channel, discord.threads.Thread):
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
-            if poll_msg.poll is not None:
-                if "STATUS" in status_msg.content:
-                    if quorum == 0 or quorum >= 7: # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
-                        await ctx.defer(ephemeral=True)
-                        await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, type=type, quorum=quorum)
-                        embed = discord.Embed(title = "Success", description = "The command succeeded.")
-                        await ctx.respond(embed = embed, ephemeral=True)
-                    else:
-                        logger.info("Supplied quorum value is out of legal range")
+            if poll_msg is None: # if the poll message has not been provided
+                poll_msg = await _get_past_message_from_current_thread(ctx=ctx, type='poll') # attempt to fetch automatically
+            if status_msg is None:
+                status_msg = await _get_past_message_from_current_thread(ctx=ctx, type='status')
+            if poll_msg is not None and status_msg is not None: # if both have been provided or can be automatically fetched
+                if poll_msg.poll is not None: # do a final check in case this is manually entered
+                    if "STATUS" in status_msg.content:
+                        if quorum == 0 or quorum >= 7: # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
+                            await ctx.defer(ephemeral=True)
+                            await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, type=type, quorum=quorum)
+                            embed = discord.Embed(title = "Success", description = "The command succeeded.")
+                            await ctx.respond(embed = embed, ephemeral=True)
+                        else:
+                            logger.info("Supplied quorum value is out of legal range")
 
-                        embed = discord.Embed(title = "Quorum value invalid", description = "The quorum value must either be zero (non-legislative proposal) or greater than / equal to seven (legislative proposal).")
+                            embed = discord.Embed(title = "Quorum value invalid", description = "The quorum value must either be zero (non-legislative proposal) or greater than / equal to seven (legislative proposal).")
+                            logger.debug("Embed object created")
+
+                            await ctx.respond(embed = embed, ephemeral = True)
+                            logger.info("Quorum out of range embed sent")
+
+                    else:
+                        logger.info("status_msg does not contain 'STATUS'")
+
+                        embed = discord.Embed(title = "Status Message not provided", description = "The status message does not contain the word 'status' - are you sure it is correct?")
                         logger.debug("Embed object created")
 
                         await ctx.respond(embed = embed, ephemeral = True)
-                        logger.info("Quorum out of range embed sent")
-
+                        logger.info("'No status' embed sent")
                 else:
-                    logger.info("status_msg does not contain 'STATUS'")
+                    logger.info("No poll on poll_msg: poll_msg must have poll")
 
-                    embed = discord.Embed(title = "Status Message not provided", description = "The status message does not contain the word 'status' - are you sure it is correct?")
+                    embed = discord.Embed(title = "Poll Message does not have poll", description = "A poll must be attached to the poll_msg argument.")
                     logger.debug("Embed object created")
 
                     await ctx.respond(embed = embed, ephemeral = True)
-                    logger.info("'No status' embed sent")
+                    logger.info("'No poll' embed sent")
             else:
-                logger.info("No poll on poll_msg: poll_msg must have poll")
+                logger.info("No poll_msg or status_msg: auto fetching must have failed")
 
-                embed = discord.Embed(title = "Poll Message does not have poll", description = "A poll must be attached to the poll_msg argument.")
-                logger.debug("Embed object created")
+                embed = discord.Embed(title = "Automatic fetching failed", description = f"Automatic fetching of the poll message or status message failed - please provide manually through `poll_msg` and `status_msg`, and report this bug to <@{config["error_ping"]}>.")
 
                 await ctx.respond(embed = embed, ephemeral = True)
-                logger.info("'No poll' embed sent")
+                logger.info("Auto fetch failure embed sent")
         else:
             logger.info("User is not authenticated")
 
