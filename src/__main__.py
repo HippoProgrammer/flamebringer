@@ -7,9 +7,9 @@ import validators # string validation
 import datetime # datetime handling
 from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
-from enum import Enum
+from enum import Enum, nonmember
 
-__version__ = "1.6.0b2"
+__version__ = "1.6.0b3"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
@@ -76,17 +76,10 @@ class ProposalType(Enum):
     holiday = 4
     treaty = 5
 
-    @nonmember
-    legislatives = [ProposalType.legislative, ProposalType.constitutional, ProposalType.holiday, ProposalType.treaty]
-
-    @nonmember
-    nonlegislatives = [ProposalType.honorary]
-
-    @nonmember
-    approvables = [ProposalType.constitutional, ProposalType.honorary, ProposalType.treaty]
-
-    @nonmember
-    nonapprovables = [ProposalType.legislative, ProposalType.holiday]
+    legislatives = enum.nonmember([ProposalType.legislative, ProposalType.constitutional, ProposalType.holiday, ProposalType.treaty])
+    nonlegislatives = enum.nonmember([ProposalType.honorary])
+    approvables = enum.nonmember([ProposalType.constitutional, ProposalType.honorary, ProposalType.treaty])
+    nonapprovables = enum.nonmember([ProposalType.legislative, ProposalType.holiday])
 
     @nonmember
     choices = [
