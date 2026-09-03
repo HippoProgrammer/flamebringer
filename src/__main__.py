@@ -76,12 +76,12 @@ class ProposalType(Enum):
     holiday = 4
     treaty = 5
 
-    legislatives = enum.nonmember([ProposalType.legislative, ProposalType.constitutional, ProposalType.holiday, ProposalType.treaty])
-    nonlegislatives = enum.nonmember([ProposalType.honorary])
-    approvables = enum.nonmember([ProposalType.constitutional, ProposalType.honorary, ProposalType.treaty])
-    nonapprovables = enum.nonmember([ProposalType.legislative, ProposalType.holiday])
+    legislatives = nonmember([ProposalType.legislative, ProposalType.constitutional, ProposalType.holiday, ProposalType.treaty])
+    nonlegislatives = nonmember([ProposalType.honorary])
+    approvables = nonmember([ProposalType.constitutional, ProposalType.honorary, ProposalType.treaty])
+    nonapprovables = nonmember([ProposalType.legislative, ProposalType.holiday])
 
-    choices = enum.nonmember([
+    choices = nonmember([
         discord.OptionChoice("Legislative (New Law / Amendment / Repeal)", value=ProposalType.legislative),
         discord.OptionChoice("Constitutional Amendment", value=ProposalType.constitutional),
         discord.OptionChoice("Honorary Title Nomination", value=ProposalType.honorary),
