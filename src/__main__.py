@@ -78,14 +78,6 @@ class ProposalType(Flag):
     legislatives = legislative | constitutional | holiday | treaty
     approvables = constitutional | honorary | treaty
 
-    choices = nonmember([
-        discord.OptionChoice("Legislative (New Law / Amendment / Repeal)", value=legislative),
-        discord.OptionChoice("Constitutional Amendment", value=constitutional),
-        discord.OptionChoice("Honorary Title Nomination", value=honorary),
-        discord.OptionChoice("Regional Holiday Proposal", value=holiday),
-        discord.OptionChoice("Treaty", value=treaty)
-    ])
-
     @property
     def is_legislative(self):
         if self in legislatives:
@@ -316,8 +308,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
     type=discord.SlashCommandOptionType.string)
 @discord.option("type",
     description="The type of the proposal",
-    type=ProposalType,
-    choices=ProposalType.choices)
+    type=ProposalType )
 @discord.option("duration",
     description="Duration of the poll in hours (default: 48h)",
     type=discord.SlashCommandOptionType.integer,
@@ -392,8 +383,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
     description="The URL of the poll (sent by the bot)")
 @discord.option("type",
     description="The type of the proposal",
-    type=ProposalType,
-    choices=ProposalType.choices)
+    type=ProposalType )
 @discord.option("quorum",
     description="Quorum for the vote (on vote text)",
     type=discord.SlashCommandOptionType.integer,
@@ -462,8 +452,7 @@ triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circ
     description="Name of the treaty or constitutional amendment", type=discord.SlashCommandOptionType.string)
 @discord.option("type",
     description="The type of the proposal",
-    type=ProposalType,
-    choices=ProposalType.choices)
+    type=ProposalType )
 @discord.option("aye",
     description="How many Triune Circle members voted in favor of approval",
     type=discord.SlashCommandOptionType.integer,
@@ -524,8 +513,7 @@ manual = halls.create_subgroup("manual", "Commands allowing manual operation of 
     type=discord.SlashCommandOptionType.string)
 @discord.option("type",
     description="The type of the proposal",
-    type=ProposalType,
-    choices=ProposalType.choices)
+    type=ProposalType)
 @discord.option("duration",
     description="Duration of the poll in hours (default: 48h)",
     type=discord.SlashCommandOptionType.integer,
