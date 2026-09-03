@@ -123,7 +123,7 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, treaty: 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
 
-async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationContext, name:str, status_msg:discord.Message, poll_msg:discord.Message, constitutional:bool, treaty:bool, quorum: int):
+async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationContext, name:str, status_msg:discord.Message, poll_msg:discord.Message, constitutional:bool, treaty:bool, honorary:bool, quorum: int):
     the_name = await _format_definite_article(name=name)
 
     poll = poll_msg.poll
@@ -153,7 +153,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
                 passed = "REJECTED"
                 sanction = f"**{the_name.title()} has been rejected by the Halls of Solaris.**"
         else:
-            if aye_percent > (3/5):
+            if aye_percent > ((1/2) if honorary else (3/5)):
                 passed = "PASSED"
                 sanction = f"**{the_name.title()} has been passed by the Halls of Solaris and as of <t:{int(round(poll.expiry.timestamp(),0))}:f> it is in effect.**"
             else:
@@ -303,8 +303,9 @@ async def vote(ctx: discord.ApplicationContext, name: str, author: discord.Membe
 @discord.option("poll_msg", description="The URL of the poll (sent by the bot)")
 @discord.option("constitutional", description="Is the proposal a constitutional amendment?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("treaty", description="Is the proposal a treaty?", type=discord.SlashCommandOptionType.boolean)
+@discord.option("honorary", description="Is the proposal an Honorary Title Nomination?", type=discord.SlashCommandOptionType.boolean)
 @discord.option("quorum", description="Quorum for the vote (on vote text)", type=discord.SlashCommandOptionType.integer, min_value=0)
-async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, quorum: int):
+async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.Message, poll_msg: discord.Message, constitutional:bool, treaty: bool, honorary:bool, quorum: int):
     logger.info(f"Count command sent by {ctx.user.id}")
 
     if isinstance(ctx.channel, discord.threads.Thread):
@@ -317,7 +318,7 @@ async def count(ctx: discord.ApplicationContext, name: str, status_msg: discord.
                     if "STATUS" in status_msg.content:
                         if quorum == 0 or quorum >= 7: # quorum must be either zero (non-legislative) or greater than seven (legislative minimum)
                             await ctx.defer(ephemeral=True)
-                            await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, quorum=quorum)
+                            await _edit_vote_status_with_count_and_sanction(ctx=ctx, name=name, status_msg=status_msg, poll_msg=poll_msg, constitutional=constitutional, treaty=treaty, honorary=honorary, quorum=quorum)
                             await ctx.respond(content="Success", ephemeral=True)
                         else:
                             logger.info("Supplied quorum value is out of legal range")
