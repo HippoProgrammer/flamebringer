@@ -262,8 +262,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
 @discord.option("secondary_author_3", description="The Discord account of a third secondary author of the proposal", required=False, type=discord.SlashCommandOptionType.user)
 async def vote(ctx: discord.ApplicationContext, name: str, primary_author: discord.Member, link: str, treaty: bool, constitutional: bool, legislative: bool, duration: int, secondary_author_1: discord.Member, secondary_author_2: discord.Member, secondary_author_3: discord.Member):
     logger.info(f"Vote command sent by {ctx.user.id}")
-    logger.info(secondary_author_1)
-    logger.info(secondary_author_1.id)
+    authors = [author for author in [primary_author, secondary_author_1, secondary_author_2, secondary_author_3] if not None]
     if isinstance(ctx.channel, discord.threads.Thread):
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
         if permitted:
@@ -274,7 +273,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
                     await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
                     await _set_thread_lock(ctx=ctx)
                     await _send_image(ctx=ctx, header=True)
-                    await _send_vote_text(ctx=ctx, name=name, constitutional=constitutional, treaty=treaty, legislative=legislative, link=link, duration=duration)
+                    await _send_vote_text(ctx=ctx, name=name, authors=authors, constitutional=constitutional, treaty=treaty, legislative=legislative, link=link, duration=duration)
                     await _create_vote_poll(ctx=ctx, name=name, treaty=treaty, duration=duration)
                     await _send_vote_status(ctx=ctx)
                     await _send_image(ctx=ctx, header=False)
