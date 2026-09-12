@@ -9,7 +9,7 @@ from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 from enum import Flag, nonmember, auto
 
-__version__ = "1.6.0"
+__version__ = "1.7.0b1"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
