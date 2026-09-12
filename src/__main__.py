@@ -206,7 +206,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
             else:
                 passed = "REJECTED"
                 sanction = f"**{the_name.title()} has failed to achieve the required two-thirds majority and therefore does not pass the Halls of Solaris.**"
-        elif treaty:
+        elif type == ProposalType.treaty:
             if aye_percent > type.voting_threshold:
                 passed = "APPROVED"
                 sanction = f"**{the_name.title()} has been approved by the Halls of Solaris. <@&{config['tc_permission_role_id']}>**"
