@@ -604,7 +604,7 @@ async def image(ctx: discord.ApplicationContext, type: str):
 async def on_thread_create(thread: discord.Thread): # ping the office when a new thread is created
     if thread.parent == bot.get_channel(config["voting_forum_id"]): # in the correct channel
         if thread.can_send():
-            if ctx.channel.parent.get_tag(config["debate_tag_id"]) in thread.applied_tags:
+            if thread.parent.get_tag(config["debate_tag_id"]) in thread.applied_tags:
                 embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
                 await thread.send(content=f"<@{"> <@".join(config["fw_announcement_role_ids"])}>", embed=embed)
             else:
@@ -615,7 +615,7 @@ async def on_thread_create(thread: discord.Thread): # ping the office when a new
 async def on_thread_update(thread: discord.Thread): # ping the office when a new thread is created
     if thread.parent == bot.get_channel(config["voting_forum_id"]): # in the correct channel
         if thread.can_send():
-            if ctx.channel.parent.get_tag(config["debate_tag_id"]) in thread.applied_tags:
+            if thread.parent.get_tag(config["debate_tag_id"]) in thread.applied_tags:
                 embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
                 await thread.send(content=f"<@{"> <@".join(config["fw_announcement_role_ids"])}>", embed=embed)
 
