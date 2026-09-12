@@ -615,9 +615,10 @@ async def on_thread_create(thread: discord.Thread): # ping the office when a new
 async def on_thread_update(before: discord.Thread, after: discord.Thread): # ping the office when a new thread is created
     if after.parent == bot.get_channel(config["voting_forum_id"]): # in the correct channel
         if after.can_send():
-            if after.parent.get_tag(config["debate_tag_id"]) in after.applied_tags:
-                embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
-                await after.send(content=f"<@&{"> <@&".join(map(str, config["fw_announcement_role_ids"]))}>", embed=embed)
+            if not before.applied_tags == after.applied_tags: # if a change has actually been made
+                if after.parent.get_tag(config["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(config["debate_tag_id"]) not in before.applied_tags:
+                    embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
+                    await after.send(content=f"<@&{"> <@&".join(map(str, config["fw_announcement_role_ids"]))}>", embed=embed)
 
 @bot.event
 async def on_application_command_error(ctx:discord.ApplicationContext, error:discord.DiscordException):
