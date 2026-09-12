@@ -468,10 +468,9 @@ async def acknowledge(ctx: discord.ApplicationContext):
     permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
     if permitted:
         logger.info("User is authenticated")
-        await ctx.defer(ephemeral=True)
         conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(config["debate_min_duration"]))
         embed = discord.Embed(title = "Debate period acknowledged", description = f"The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f>, after which the proposal may be motioned to vote by any author.")
-        await ctx.respond(embed = embed, ephemeral=True)
+        await ctx.respond(embed = embed)
     else:
         logger.info("User is not authenticated")
 
