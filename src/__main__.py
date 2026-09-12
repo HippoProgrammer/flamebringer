@@ -9,7 +9,7 @@ from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 from enum import Flag, nonmember, auto
 
-__version__ = "1.7.0b1"
+__version__ = "1.7.0b2"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
@@ -347,7 +347,7 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
                 await _send_vote_text(ctx=ctx, name=name, authors=authors, type=type, link=link, duration=duration)
                 await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
                 await _send_vote_status(ctx=ctx)
-                await _send_image(ctx=ctx, type="header")
+                await _send_image(ctx=ctx, type="footer")
                 await _set_tag(ctx=ctx, tag="vote")
                 embed = discord.Embed(title = "Success", description = "The command succeeded.")
                 await ctx.respond(embed = embed, ephemeral=True)
