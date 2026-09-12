@@ -462,6 +462,25 @@ async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, 
         await ctx.respond(embed = embed, ephemeral = True)
         logger.info("Wrong channel type embed sent")
 
+@halls.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
+async def acknowledge(ctx: discord.ApplicationContext):
+    logger.info(f"Acknowledge command sent by {ctx.user.id}")
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    if permitted:
+        logger.info("User is authenticated")
+        await ctx.defer(ephemeral=True)
+        conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(config["debate_min_duration"]))
+        embed = discord.Embed(title = "Debate period acknowledged", description = f"The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f>, after which the proposal may be motioned to vote by any author.")
+        await ctx.respond(embed = embed, ephemeral=True)
+    else:
+        logger.info("User is not authenticated")
+
+        embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+        logger.debug("Embed object created")
+
+        await ctx.respond(embed = embed, ephemeral = True)
+        logger.info("No permissions embed sent")
+
 triune = halls.create_subgroup("triune", "Commands pertaining to the Triune Circle's approval of laws")
 
 @triune.command(name="approve",

@@ -16,6 +16,7 @@ config:
   passed_tag_id: 6
   failed_tag_id: 7
   voting_forum_id: 8
+  debate_min_duration: 48 # hours
   poll_durations:
     min: 48 # hours
     max: 172
