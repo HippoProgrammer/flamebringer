@@ -4,14 +4,50 @@ services: # define services
   app: # main Python app
     build: ./ # build using a Dockerfile in the local directory
     restart: always
+    depends_on:
+      db:
+        condition: service_healthy
     secrets:
       - bot-token
       - bot-config
     environment: # pass location of secrets to the container
       FLAMEBRINGER_CONFIG_FILE: /run/secrets/bot-config
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: flamebringer
+      POSTGRES_DB: flamebringer
+      POSTGRES_PASSWORD: flamebringer
+    networks:
+      - db
+
+  db: # postgres DB
+    hostname: db # assign a hostname for easier connection
+    image: postgres:18.6-alpine3.23 # use the latest Postgres Alpine image
+    shm_size: 128mb # define a memory limit
+    restart: always # restart if errors occur
+    environment:
+      POSTGRES_PASSWORD: flamebringer
+      POSTGRES_DB: flamebringer
+      POSTGRES_USER: flamebringer
+    volumes: # map a volume to the Postgres data directory
+      - db-data:/var/lib/postgresql # data
+      - ./sql/init:/docker-entrypoint-initdb.d # initialization scripts
+    networks: # allow the two containers to communicate
+      - db
+    healthcheck: # set up a health check to confirm when the DB is ready
+      test: ["CMD-SHELL", "pg_isready -U flamebringer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 secrets:
   bot-token:
     file: ./conf/secrets/token.conf
   bot-config:
     file: ./conf/bot.yaml
+
+volumes: # allow Docker to handle volume storage
+  db-data:
+
+networks: # allow Docker to handle networking
+  db:
