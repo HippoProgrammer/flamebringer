@@ -97,10 +97,10 @@ async def _send_vote_status(ctx: discord.ApplicationContext):
 
 async def _send_image(ctx: discord.ApplicationContext, type: str):
     if type == 'header':
-        with open(config[ctx.guild.id]["image_paths"]["header"], "rb") as image:
+        with open(config["image_paths"]["header"], "rb") as image:
             file = discord.File(fp=image, filename="fw_header.png", description="Seal of the Office of the Flamewarden")
     else:
-        with open(config[ctx.guild.id]["image_paths"]["footer"], "rb") as image:
+        with open(config["image_paths"]["footer"], "rb") as image:
             file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
     await ctx.channel.send(file=file)
 
