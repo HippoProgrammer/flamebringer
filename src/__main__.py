@@ -638,18 +638,4 @@ async def on_thread_update(before: discord.Thread, after: discord.Thread): # pin
                     await after.send(content=f"<@&{"> <@&".join(map(str, config[ctx.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
                     logger.info("Debate ping sent")
 
-@bot.event
-async def on_application_command_error(ctx:discord.ApplicationContext, error:discord.DiscordException):
-    if type(error) is discord.ext.commands.MessageNotFound:
-        logger.info("Message was not found")
-
-        embed = discord.Embed(title = "Message not Found", description = "The message provided was not found.")
-        logger.debug("Embed object created")
-
-        await ctx.respond(embed = embed, ephemeral = True)
-        logger.info("Message not found embed sent")
-    else:
-        logger.error(error, stack_info = True, exc_info = True)
-        await ctx.channel.send(f'<@{config[ctx.guild.id]["error_ping"]}> An unspecified error occurred (`{str(error)}`).')
-
 bot.run(token)
