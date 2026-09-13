@@ -9,7 +9,7 @@ from yaml import safe_load as load_yaml # yaml parsing
 from math import ceil # ceiling function
 from enum import Flag, nonmember, auto
 
-__version__ = "1.7.0b2"
+__version__ = "1.7.0b3"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
@@ -53,7 +53,7 @@ logger.debug("Bot object created")
 
 # basic discord functions (calculate quorum, lock threads, set tags etc.)
 async def _get_quorum(ctx: discord.ApplicationContext): # get quorum based on a pre-configured role
-    quorum_role = ctx.guild.get_role(int(config["quorum_role_id"])) # fetch the role id from the config and get the Role object from the bot
+    quorum_role = ctx.guild.get_role(int(config[ctx.guild.id]["quorum_role_id"])) # fetch the role id from the config and get the Role object from the bot
     count = len([member for member in quorum_role.members if not(member.bot)]) # use a list comprehension to only count members who are not bots
     count_quorum = ceil(count / 10) # quorum is 10%, rounded up
     quorum = max(count_quorum, 7) # but if 10% is less than 7, we use 7
@@ -62,7 +62,7 @@ async def _get_quorum(ctx: discord.ApplicationContext): # get quorum based on a 
 async def _set_tag(ctx: discord.ApplicationContext, tag:str): # set a tag on a thread, CLEARING ALL PREVIOUS TAGS
     if isinstance(ctx.channel, discord.threads.Thread): # check that the channel is actually a thread channel
         if isinstance(ctx.channel.parent, discord.ForumChannel): # check that the thread channel is in a forum channel, so it actually supports tags
-            tag = ctx.channel.parent.get_tag(config[f"{tag}_tag_id"]) # if those are both true, try to get the requested ForumTag object from the parent forum channel
+            tag = ctx.channel.parent.get_tag(config[ctx.guild.id][f"{tag}_tag_id"]) # if those are both true, try to get the requested ForumTag object from the parent forum channel
             await ctx.channel.edit(applied_tags=[tag]) # apply that tag to the thread
 
 async def _set_thread_lock(ctx: discord.ApplicationContext, lock = True): # lock or unlock a thread
@@ -118,17 +118,17 @@ async def _format_member_list(members: list[discord.Member]):
 # command backend functions
 # halls commands
 async def _send_lock_message(ctx: discord.ApplicationContext):
-    await ctx.channel.send(f"<@&{config['fw_primary_role_id']}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
+    await ctx.channel.send(f"<@&{config[ctx.guild.id]['fw_primary_role_id']}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
 
 async def _send_image(ctx: discord.ApplicationContext, type: str):
     if type == 'header':
-        with open(config["image_paths"]["header"], "rb") as image:
+        with open(config[ctx.guild.id]["image_paths"]["header"], "rb") as image:
             file = discord.File(fp=image, filename="fw_header.png", description="Seal of the Office of the Flamewarden")
     else:
-        with open(config["image_paths"]["footer"], "rb") as image:
+        with open(config[ctx.guild.id]["image_paths"]["footer"], "rb") as image:
             file = discord.File(fp=image, filename="fw_footer.png", description="Banner of the Office of the Flamewarden")
     await ctx.channel.send(file=file)
 
@@ -164,7 +164,7 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, type: Pr
         else:
             tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay}-{abstain})."
 
-    for id in config["fw_announcement_role_ids"]:
+    for id in config[ctx.guild.id]["fw_announcement_role_ids"]:
         tc_approval = f"<@&{id}> " + tc_approval # append a ping of every role in fw_announcement_role_ids to the beginning of the tc_approval string
 
     await ctx.channel.send(content=tc_approval)
@@ -284,7 +284,7 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
         logger.info("Message not found embed sent")
     else:
         logger.error(error, stack_info = True, exc_info = True)
-        await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred.')
+        await ctx.channel.send(f'<@{config[ctx.guild.id]["error_ping"]}> An unspecified error occurred.')
 
 # slash commands
 @bot.slash_command(name="info", description="Information about the bot")
@@ -315,10 +315,7 @@ halls = bot.create_group("halls", "Commands relating to the Halls of Solaris")
     type=ProposalType )
 @discord.option("duration",
     description="Duration of the poll in hours (default: 48h)",
-    type=discord.SlashCommandOptionType.integer,
-    min_value=config["poll_durations"]["min"],
-    max_value=config["poll_durations"]["max"],
-    default=config["poll_durations"]["default"])
+    type=discord.SlashCommandOptionType.integer)
 @discord.option("secondary_author_1",
     description="The Discord account of a secondary author of the proposal",
     required=False,
@@ -336,29 +333,40 @@ async def vote(ctx: discord.ApplicationContext, name: str, primary_author: disco
     logger.info(f"Vote command sent by {ctx.user.id}")
     authors = [author for author in [primary_author, secondary_author_1, secondary_author_2, secondary_author_3] if author is not None]
     if isinstance(ctx.channel, discord.threads.Thread):
-        permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
-            if validators.url(link):
-                await ctx.defer(ephemeral=True)
-                await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
-                await _set_thread_lock(ctx=ctx)
-                await _send_image(ctx=ctx, type="header")
-                await _send_vote_text(ctx=ctx, name=name, authors=authors, type=type, link=link, duration=duration)
-                await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
-                await _send_vote_status(ctx=ctx)
-                await _send_image(ctx=ctx, type="footer")
-                await _set_tag(ctx=ctx, tag="vote")
-                embed = discord.Embed(title = "Success", description = "The command succeeded.")
-                await ctx.respond(embed = embed, ephemeral=True)
-            else:
-                logger.info("Invalid URL provided: valid URL must be provided")
+            if duration is None:
+                duration = config[ctx.guild.id]["poll_durations"]["default"]
+            if duration >= config[ctx.guild.id]["poll_durations"]["min"] and duration <= config[ctx.guild.id]["poll_durations"]["max"]: # if duration between max and min
+                if validators.url(link):
+                    await ctx.defer(ephemeral=True)
+                    await _send_lock_message(ctx=ctx) # if motioning gets implemented this should be spun off to the motioning function
+                    await _set_thread_lock(ctx=ctx)
+                    await _send_image(ctx=ctx, type="header")
+                    await _send_vote_text(ctx=ctx, name=name, authors=authors, type=type, link=link, duration=duration)
+                    await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
+                    await _send_vote_status(ctx=ctx)
+                    await _send_image(ctx=ctx, type="footer")
+                    await _set_tag(ctx=ctx, tag="vote")
+                    embed = discord.Embed(title = "Success", description = "The command succeeded.")
+                    await ctx.respond(embed = embed, ephemeral=True)
+                else:
+                    logger.info("Invalid URL provided: valid URL must be provided")
 
-                embed = discord.Embed(title = "Invalid URL", description = "The link provided is not a valid URL.")
+                    embed = discord.Embed(title = "Invalid URL", description = "The link provided is not a valid URL.")
+                    logger.debug("Embed object created")
+
+                    await ctx.respond(embed = embed, ephemeral = True)
+                    logger.info("Invalid URL embed sent")
+            else:
+                logger.info("Poll duration out of bounds")
+
+                embed = discord.Embed(title = "Invalid poll duration", description = f"Polls must be between {config[ctx.guild.id]["poll_durations"]["min"]} and {config[ctx.guild.id]["poll_durations"]["max"]} hours long.")
                 logger.debug("Embed object created")
 
                 await ctx.respond(embed = embed, ephemeral = True)
-                logger.info("Invalid URL embed sent")
+                logger.info("Invalid duration embed sent")
         else:
             logger.info("User is not authenticated")
 
@@ -398,7 +406,7 @@ async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, 
     logger.info(f"Count command sent by {ctx.user.id}")
 
     if isinstance(ctx.channel, discord.threads.Thread):
-        permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
             if poll_msg is None: # if the poll message has not been provided
@@ -441,7 +449,7 @@ async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, 
             else:
                 logger.info("No poll_msg or status_msg: auto fetching must have failed")
 
-                embed = discord.Embed(title = "Automatic fetching failed", description = f"Automatic fetching of the poll message or status message failed - please provide manually through `poll_msg` and `status_msg`, and report this bug to <@{config["error_ping"]}>.")
+                embed = discord.Embed(title = "Automatic fetching failed", description = f"Automatic fetching of the poll message or status message failed - please provide manually through `poll_msg` and `status_msg`, and report this bug to <@{config[ctx.guild.id]["error_ping"]}>.")
 
                 await ctx.respond(embed = embed, ephemeral = True)
                 logger.info("Auto fetch failure embed sent")
@@ -465,10 +473,10 @@ async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, 
 @halls.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
 async def acknowledge(ctx: discord.ApplicationContext):
     logger.info(f"Acknowledge command sent by {ctx.user.id}")
-    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
     if permitted:
         logger.info("User is authenticated")
-        conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(config["debate_min_duration"]))
+        conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(config[ctx.guild.id]["debate_min_duration"]))
         embed = discord.Embed(title = "Debate period acknowledged", description = f"The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f> (<t:{int(round(conclusion.timestamp(),0))}:R>), after which the proposal may be motioned to vote by any author.")
         await ctx.respond(embed = embed)
     else:
@@ -509,7 +517,7 @@ async def approve(ctx: discord.ApplicationContext, name: str, type: ProposalType
     logger.info(f"Approve command sent by {ctx.user.id}")
 
     if isinstance(ctx.channel, discord.threads.Thread):
-        if ctx.user.get_role(int(config["tc_permission_role_id"])):
+        if ctx.user.get_role(int(config[ctx.guild.id]["tc_permission_role_id"])):
             logger.info("User is authenticated")
             if type.is_approvable:
                 await ctx.defer(ephemeral=True)
@@ -552,20 +560,28 @@ manual = halls.create_subgroup("manual", "Commands allowing manual operation of 
     type=ProposalType)
 @discord.option("duration",
     description="Duration of the poll in hours (default: 48h)",
-    type=discord.SlashCommandOptionType.integer,
-    min_value=config["poll_durations"]["min"],
-    max_value=config["poll_durations"]["max"],
-    default=config["poll_durations"]["default"])
+    type=discord.SlashCommandOptionType.integer)
 async def poll(ctx: discord.ApplicationContext, name: str, type: ProposalType, duration: int):
     logger.info(f"Manual poll command sent by {ctx.user.id}")
 
-    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
     if permitted:
         logger.info("User is authenticated")
-        await ctx.defer(ephemeral=True)
-        await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
-        embed = discord.Embed(title = "Success", description = "The command succeeded.")
-        await ctx.respond(embed = embed, ephemeral=True)
+        if duration is None:
+            duration = config[ctx.guild.id]["poll_durations"]["default"]
+        if duration >= config[ctx.guild.id]["poll_durations"]["min"] and duration <= config[ctx.guild.id]["poll_durations"]["max"]: # if duration between max and min
+            await ctx.defer(ephemeral=True)
+            await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
+            embed = discord.Embed(title = "Success", description = "The command succeeded.")
+            await ctx.respond(embed = embed, ephemeral=True)
+        else:
+            logger.info("Poll duration out of bounds")
+
+            embed = discord.Embed(title = "Invalid poll duration", description = f"Polls must be between {config[ctx.guild.id]["poll_durations"]["min"]} and {config[ctx.guild.id]["poll_durations"]["max"]} hours long.")
+            logger.debug("Embed object created")
+
+            await ctx.respond(embed = embed, ephemeral = True)
+            logger.info("Invalid duration embed sent")
     else:
         logger.info("User is not authenticated")
 
@@ -583,7 +599,7 @@ async def poll(ctx: discord.ApplicationContext, name: str, type: ProposalType, d
 async def image(ctx: discord.ApplicationContext, type: str):
     logger.info(f"Manual image command sent by {ctx.user.id}")
 
-    permitted = any(ctx.user.get_role(rid) for rid in map(int, config["fw_permission_role_ids"]))
+    permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
     if permitted:
         logger.info("User is authenticated")
         await ctx.defer(ephemeral=True)
@@ -601,11 +617,11 @@ async def image(ctx: discord.ApplicationContext, type: str):
 
 @bot.event
 async def on_thread_create(thread: discord.Thread): # ping the office when a new thread is created
-    if thread.parent == bot.get_channel(config["voting_forum_id"]): # in the correct channel
+    if thread.parent == bot.get_channel(config[ctx.guild.id]["voting_forum_id"]): # in the correct channel
         if thread.can_send():
-            if thread.parent.get_tag(config["debate_tag_id"]) in thread.applied_tags:
+            if thread.parent.get_tag(config[ctx.guild.id]["debate_tag_id"]) in thread.applied_tags:
                 embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
-                await thread.send(content=f"<@&{"> <@&".join(map(str, config["fw_announcement_role_ids"]))}>", embed=embed)
+                await thread.send(content=f"<@&{"> <@&".join(map(str, config[ctx.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
                 logger.info("Debate ping sent")
             else:
                 embed = discord.Embed(title = "You have submitted your proposal!", description = "You may motion your proposal to debate at any time by modifying this thread's tags to 'In Debate'.")
@@ -614,12 +630,12 @@ async def on_thread_create(thread: discord.Thread): # ping the office when a new
 
 @bot.event
 async def on_thread_update(before: discord.Thread, after: discord.Thread): # ping the office when a new thread is created
-    if after.parent == bot.get_channel(config["voting_forum_id"]): # in the correct channel
+    if after.parent == bot.get_channel(config[ctx.guild.id]["voting_forum_id"]): # in the correct channel
         if after.can_send():
             if not before.applied_tags == after.applied_tags: # if a change has actually been made
-                if after.parent.get_tag(config["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(config["debate_tag_id"]) not in before.applied_tags:
+                if after.parent.get_tag(config[ctx.guild.id]["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(config[ctx.guild.id]["debate_tag_id"]) not in before.applied_tags:
                     embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
-                    await after.send(content=f"<@&{"> <@&".join(map(str, config["fw_announcement_role_ids"]))}>", embed=embed)
+                    await after.send(content=f"<@&{"> <@&".join(map(str, config[ctx.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
                     logger.info("Debate ping sent")
 
 @bot.event
@@ -634,6 +650,6 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
         logger.info("Message not found embed sent")
     else:
         logger.error(error, stack_info = True, exc_info = True)
-        await ctx.channel.send(f'<@{config["error_ping"]}> An unspecified error occurred (`{str(error)}`).')
+        await ctx.channel.send(f'<@{config[ctx.guild.id]["error_ping"]}> An unspecified error occurred (`{str(error)}`).')
 
 bot.run(token)

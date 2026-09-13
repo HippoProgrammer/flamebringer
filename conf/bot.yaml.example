@@ -1,26 +1,27 @@
 config:
   log_verbosity: 10
   token_file: /run/secrets/bot-token
-  error_ping: 0
-  fw_permission_role_ids:
-    - 0
-    - 1
-  fw_primary_role_id: 0
-  fw_announcement_role_ids:
-    - 0
-    - 1
-  tc_permission_role_id: 2
-  quorum_role_id: 3
-  debate_tag_id: 4
-  vote_tag_id: 5
-  passed_tag_id: 6
-  failed_tag_id: 7
-  voting_forum_id: 8
-  debate_min_duration: 48 # hours
-  poll_durations:
-    min: 48 # hours
-    max: 172
-    default: 48
-  image_paths:
-    header: ./data/fw_header.png
-    footer: ./data/fw_footer.png
+  1010101010101: # guild id
+    error_ping: 0
+    fw_permission_role_ids:
+        - 0
+        - 1
+    fw_primary_role_id: 0
+    fw_announcement_role_ids:
+        - 0
+        - 1
+    tc_permission_role_id: 2
+    quorum_role_id: 3
+    debate_tag_id: 4
+    vote_tag_id: 5
+    passed_tag_id: 6
+    failed_tag_id: 7
+    voting_forum_id: 8
+    debate_min_duration: 48 # hours
+    poll_durations:
+        min: 48 # hours
+        max: 172
+        default: 48
+    image_paths:
+        header: ./data/fw_header.png
+        footer: ./data/fw_footer.png
