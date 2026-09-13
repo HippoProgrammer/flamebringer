@@ -31,7 +31,7 @@ services: # define services
       POSTGRES_USER: flamebringer
     volumes: # map a volume to the Postgres data directory
       - db-data:/var/lib/postgresql # data
-      - ./sql/init:/docker-entrypoint-initdb.d # initialization scripts
+      - ./sql:/docker-entrypoint-initdb.d # initialization scripts
     networks: # allow the two containers to communicate
       - db
     healthcheck: # set up a health check to confirm when the DB is ready
