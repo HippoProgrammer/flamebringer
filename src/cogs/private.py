@@ -2,7 +2,7 @@
 # it provides various shared functions that act as the backend of bot commands
 
 import discord
-import logging
+import logging, sys
 
 logger = logging.getLogger("flamebringer")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout

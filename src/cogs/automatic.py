@@ -1,6 +1,6 @@
 import discord
 from private import *
-import logging
+import logging, sys
 
 logger = logging.getLogger("flamebringer")  # get the logger for this script
 handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
