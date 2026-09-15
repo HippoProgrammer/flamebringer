@@ -16,7 +16,7 @@ class Config(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @bot.slash_command(name="info", description="Information about the bot")
+    @discord.slash_command(name="info", description="Information about the bot")
     async def info(self, ctx: discord.ApplicationContext) -> None:
         logger.info(f"Info command sent by {ctx.user.id}")
         embed = discord.Embed(title = f"Flamebringer v{__version__}", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
