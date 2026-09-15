@@ -25,7 +25,7 @@ class Manual(discord.Cog):
     @discord.option("duration",
         description="Duration of the poll in hours (default: 48h)",
         type=discord.SlashCommandOptionType.integer)
-    async def poll(ctx: discord.ApplicationContext, name: str, type: ProposalType, duration: int):
+    async def poll(self, ctx: discord.ApplicationContext, name: str, type: ProposalType, duration: int):
         logger.info(f"Manual poll command sent by {ctx.user.id}")
 
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
@@ -60,7 +60,7 @@ class Manual(discord.Cog):
         description="Which image should be provided?",
         type=discord.SlashCommandOptionType.string,
         choices=["header", "footer"])
-    async def image(ctx: discord.ApplicationContext, type: str):
+    async def image(self, ctx: discord.ApplicationContext, type: str):
         logger.info(f"Manual image command sent by {ctx.user.id}")
 
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))

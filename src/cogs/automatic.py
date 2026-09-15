@@ -48,7 +48,7 @@ class Automatic(discord.Cog):
         description="The Discord account of a third secondary author of the proposal",
         required=False,
         type=discord.SlashCommandOptionType.user)
-    async def vote(ctx: discord.ApplicationContext, name: str, primary_author: discord.Member, link: str, type: ProposalType, duration: int, secondary_author_1: discord.Member, secondary_author_2: discord.Member, secondary_author_3: discord.Member):
+    async def vote(self, ctx: discord.ApplicationContext, name: str, primary_author: discord.Member, link: str, type: ProposalType, duration: int, secondary_author_1: discord.Member, secondary_author_2: discord.Member, secondary_author_3: discord.Member):
         logger.info(f"Vote command sent by {ctx.user.id}")
         authors = [author for author in [primary_author, secondary_author_1, secondary_author_2, secondary_author_3] if author is not None]
         if isinstance(ctx.channel, discord.threads.Thread):
@@ -121,7 +121,7 @@ class Automatic(discord.Cog):
     @discord.option("poll_msg",
         description="The URL of the poll (sent by the bot) - automatically filled if not given",
         required = None)
-    async def count(ctx: discord.ApplicationContext, name: str, type: ProposalType, quorum: int, status_msg: discord.Message, poll_msg: discord.Message):
+    async def count(self, ctx: discord.ApplicationContext, name: str, type: ProposalType, quorum: int, status_msg: discord.Message, poll_msg: discord.Message):
         logger.info(f"Count command sent by {ctx.user.id}")
 
         if isinstance(ctx.channel, discord.threads.Thread):
@@ -190,7 +190,7 @@ class Automatic(discord.Cog):
             logger.info("Wrong channel type embed sent")
 
     @halls.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
-    async def acknowledge(ctx: discord.ApplicationContext):
+    async def acknowledge(self, ctx: discord.ApplicationContext):
         logger.info(f"Acknowledge command sent by {ctx.user.id}")
         permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
         if permitted:
@@ -232,7 +232,7 @@ class Automatic(discord.Cog):
         default=0,
         min_value=0,
         max_value=2)
-    async def approve(ctx: discord.ApplicationContext, name: str, type: ProposalType, aye: int, nay: int, abstain: int):
+    async def approve(self, ctx: discord.ApplicationContext, name: str, type: ProposalType, aye: int, nay: int, abstain: int):
         logger.info(f"Approve command sent by {ctx.user.id}")
 
         if isinstance(ctx.channel, discord.threads.Thread):
