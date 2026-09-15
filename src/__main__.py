@@ -7,8 +7,6 @@ import validators # string validation
 import datetime # datetime handling
 import cogs.private as private
 from yaml import safe_load as load_yaml # yaml parsing
-from math import ceil # ceiling function
-from enum import Flag, nonmember, auto
 
 __version__ = "1.7.0b3"
 

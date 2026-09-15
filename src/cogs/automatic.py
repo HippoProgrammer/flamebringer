@@ -1,5 +1,7 @@
 import discord
 from private import *
+import validators
+import datetime
 import logging, sys
 
 logger = logging.getLogger("flamebringer")  # get the logger for this script
