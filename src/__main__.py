@@ -39,7 +39,9 @@ logger.debug("Bot object created")
 # load cogs
 logger.info("Loading cogs...")
 cogs = [
-    "automatic.py"
+    "automatic.py",
+    "manual.py",
+    "config.py"
 ]
 for file in cogs: # for every file in the src directory
     logger.info(f"Loading {file}...")
