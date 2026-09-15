@@ -2,6 +2,7 @@
 # it provides various shared functions that act as the backend of bot commands
 
 import discord
+from yaml import safe_load as load_yaml # yaml parsing
 import logging, os, sys
 
 logger = logging.getLogger("flamebringer")  # get the logger for this script
