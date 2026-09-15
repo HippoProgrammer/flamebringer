@@ -1,5 +1,5 @@
 import discord
-from private import *
+from cogs.private import *
 import validators
 import datetime
 import logging, sys

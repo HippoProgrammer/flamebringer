@@ -1,5 +1,5 @@
 import discord
-from private import *
+from cogs.private import *
 import logging, sys
 
 logger = logging.getLogger("flamebringer")  # get the logger for this script

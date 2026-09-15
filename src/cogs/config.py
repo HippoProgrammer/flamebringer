@@ -1,5 +1,5 @@
 import discord
-from private import *
+from cogs.private import *
 import sys
 sys.path.append('../')
 from __main__ import __version__
