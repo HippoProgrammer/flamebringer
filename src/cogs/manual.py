@@ -13,7 +13,7 @@ class Manual(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    manual = discord.SlashCommandGropu("manual", "Commands allowing manual operation of the bot")
+    manual = discord.SlashCommandGroup("manual", "Commands allowing manual operation of the bot")
     @manual.command(name="poll",
         description="Send a vote poll")
     @discord.option("name",
