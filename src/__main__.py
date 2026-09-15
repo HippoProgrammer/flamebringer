@@ -87,7 +87,7 @@ async def on_thread_update(before: discord.Thread, after: discord.Thread): # pin
     if after.parent == bot.get_channel(private.config[after.guild.id]["voting_forum_id"]): # in the correct channel
         if after.can_send():
             if not before.applied_tags == after.applied_tags: # if a change has actually been made
-                if after.parent.get_tag(private.config[after.guild.id]["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(private.config[ctx.guild.id]["debate_tag_id"]) not in before.applied_tags:
+                if after.parent.get_tag(private.config[after.guild.id]["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(private.config[after.guild.id]["debate_tag_id"]) not in before.applied_tags:
                     embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
                     await after.send(content=f"<@&{"> <@&".join(map(str, private.config[after.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
                     logger.info("Debate ping sent")
