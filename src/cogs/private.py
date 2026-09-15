@@ -22,7 +22,7 @@ with open(config_file, "r") as file: # open the config file
     config = load_yaml(file) # parse it into a python object
 config = config["config"] # navigate into the first section - everything should be under this first key so we don't need to constantly reference it
 logger.info("Config loaded")
-logger.setLevel(private.config["log_verbosity"]) # better hope that the config provided a valid number as we do no validation on this at all
+logger.setLevel(config["log_verbosity"]) # better hope that the config provided a valid number as we do no validation on this at all
 
 # basic discord functions (calculate quorum, lock threads, set tags etc.)
 async def _get_quorum(ctx: discord.ApplicationContext): # get quorum based on a pre-configured role
