@@ -1,3 +1,5 @@
+
+LABEL org.opencontainers.image.description The Docker container for the Flamebringer Discord bot
 # begin with the base Alpine python image
 FROM python:3.14.7-alpine3.23
 # create a directory to store the application
