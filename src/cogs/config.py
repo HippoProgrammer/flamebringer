@@ -1,15 +1,11 @@
 import discord
-from cogs.private import *
+import cogs.private as private
 import sys
 sys.path.append('../')
 from __main__ import __version__
 import logging
 
-logger = logging.getLogger("flamebringer")  # get the logger for this script
-handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
-formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %(message)s") # format [time] - [module] - [error level] - [message]
-handler.setFormatter(formatter) # attach the formatter to the handler
-logger.addHandler(handler)  # attach the handler to the logger
+logger = logging.getLogger(__name__)  # get the logger for this script
 logger.setLevel(logging.INFO)
 
 class Config(discord.Cog):
@@ -19,7 +15,7 @@ class Config(discord.Cog):
     @discord.slash_command(name="info", description="Information about the bot")
     async def info(self, ctx: discord.ApplicationContext) -> None:
         logger.info(f"Info command sent by {ctx.user.id}")
-        embed = discord.Embed(title = f"Flamebringer v{__version__}", description = f"For help or technical support message <@{config['error_ping']}> on Discord.")
+        embed = discord.Embed(title = f"Flamebringer v{__version__}", description = f"For help or technical support message <@{private.config['error_ping']}> on Discord.")
         logger.debug('Embed object created')
 
         await ctx.respond(embed = embed, ephemeral = True)
