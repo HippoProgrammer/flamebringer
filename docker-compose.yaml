@@ -2,7 +2,7 @@ name: ns-flamebringer # define the name of the app
 
 services: # define services
   app: # main Python app
-    build: ./ # build using a Dockerfile in the local directory
+    image: ghcr.io/hippoprogrammer/flamebringer:main
     restart: always
     secrets:
       - bot-token
