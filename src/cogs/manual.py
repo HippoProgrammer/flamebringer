@@ -17,27 +17,28 @@ class Manual(discord.Cog):
         type=discord.SlashCommandOptionType.string)
     @discord.option("type",
         description="The type of the proposal",
-        type=ProposalType)
+        type=private.ProposalType)
     @discord.option("duration",
-        description="Duration of the poll in hours (default: 48h)",
-        type=discord.SlashCommandOptionType.integer)
-    async def poll(self, ctx: discord.ApplicationContext, name: str, type: ProposalType, duration: int):
+        description="Duration of the poll in hours (default 48h)",
+        type=discord.SlashCommandOptionType.integer,
+        required=False)
+    async def poll(self, ctx: discord.ApplicationContext, name: str, type: private.ProposalType, duration: int):
         logger.info(f"Manual poll command sent by {ctx.user.id}")
 
-        permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
             if duration is None:
-                duration = config[ctx.guild.id]["poll_durations"]["default"]
-            if duration >= config[ctx.guild.id]["poll_durations"]["min"] and duration <= config[ctx.guild.id]["poll_durations"]["max"]: # if duration between max and min
+                duration = private.config[ctx.guild.id]["poll_durations"]["default"]
+            if duration >= private.config[ctx.guild.id]["poll_durations"]["min"] and duration <= private.config[ctx.guild.id]["poll_durations"]["max"]: # if duration between max and min
                 await ctx.defer(ephemeral=True)
-                await _create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
+                await private._create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
                 embed = discord.Embed(title = "Success", description = "The command succeeded.")
                 await ctx.respond(embed = embed, ephemeral=True)
             else:
                 logger.info("Poll duration out of bounds")
 
-                embed = discord.Embed(title = "Invalid poll duration", description = f"Polls must be between {config[ctx.guild.id]["poll_durations"]["min"]} and {config[ctx.guild.id]["poll_durations"]["max"]} hours long.")
+                embed = discord.Embed(title = "Invalid poll duration", description = f"Polls must be between {private.config[ctx.guild.id]["poll_durations"]["min"]} and {private.config[ctx.guild.id]["poll_durations"]["max"]} hours long.")
                 logger.debug("Embed object created")
 
                 await ctx.respond(embed = embed, ephemeral = True)
@@ -59,11 +60,11 @@ class Manual(discord.Cog):
     async def image(self, ctx: discord.ApplicationContext, type: str):
         logger.info(f"Manual image command sent by {ctx.user.id}")
 
-        permitted = any(ctx.user.get_role(rid) for rid in map(int, config[ctx.guild.id]["fw_permission_role_ids"]))
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
         if permitted:
             logger.info("User is authenticated")
             await ctx.defer(ephemeral=True)
-            await _send_image(ctx=ctx, type=type)
+            await private._send_image(ctx=ctx, type=type)
             embed = discord.Embed(title = "Success", description = "The command succeeded.")
             await ctx.respond(embed = embed, ephemeral=True)
         else:
