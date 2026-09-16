@@ -148,7 +148,7 @@ async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
 
 async def _get_past_message_from_current_thread(ctx: discord.ApplicationContext, type: str) -> discord.Message | None:
-    async for message in ctx.channel.history(limit = 4, oldest_first = False): # seeing how this is only linked to count, and that is only run directly after a vote, it is safest to limit to 4
+    async for message in ctx.channel.history(limit = 8, oldest_first = False): # seeing how this is only linked to count, and that is only run directly after a vote, it is safest to limit this
         if message.author == ctx.guild.me: # if the message author is the same as the object representing the bot user in this guild
             if type == 'poll' and message.content == '' and message.poll is not None: # if we're looking for polls and we find a message with no text and a poll, authored by the bot
                 return message
