@@ -4,11 +4,7 @@ import validators
 import datetime
 import logging, sys
 
-logger = logging.getLogger("flamebringer")  # get the logger for this script
-handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
-formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %(message)s") # format [time] - [module] - [error level] - [message]
-handler.setFormatter(formatter) # attach the formatter to the handler
-logger.addHandler(handler)  # attach the handler to the logger
+logger = logging.getLogger(__name__)  # get the logger for this script
 logger.setLevel(logging.INFO)
 
 class Automatic(discord.Cog):
