@@ -12,8 +12,10 @@ class Halls(discord.Cog):
         self.bot = bot
 
     halls = discord.SlashCommandGroup("halls", "Commands relating to the Halls of Solaris")
+    office = halls.create_subgroup("office", "Commands pertaining to the Office's management of the Halls")
 
-    @halls.command(
+
+    @office.command(
         name="vote",
         description="Prepare a vote")
     @discord.option("name",
@@ -100,7 +102,7 @@ class Halls(discord.Cog):
             await ctx.respond(embed = embed, ephemeral = True)
             logger.info("Wrong channel type embed sent")
 
-    @halls.command(
+    @office.command(
         name="count",
         description="Edit the vote status when the vote ends")
     @discord.option("name",
@@ -186,7 +188,7 @@ class Halls(discord.Cog):
             await ctx.respond(embed = embed, ephemeral = True)
             logger.info("Wrong channel type embed sent")
 
-    @halls.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
+    @office.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
     async def acknowledge(self, ctx: discord.ApplicationContext):
         logger.info(f"Acknowledge command sent by {ctx.user.id}")
         permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
