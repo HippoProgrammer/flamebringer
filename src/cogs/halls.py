@@ -7,7 +7,7 @@ import logging, sys
 logger = logging.getLogger(__name__)  # get the logger for this script
 logger.setLevel(logging.INFO)
 
-class Automatic(discord.Cog):
+class Halls(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -334,4 +334,4 @@ class Automatic(discord.Cog):
             logger.info("No permissions embed sent")
 
 def setup(bot):
-    bot.add_cog(Automatic(bot))
+    bot.add_cog(Halls(bot))
