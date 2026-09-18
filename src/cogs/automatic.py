@@ -30,6 +30,7 @@ class Automatic(discord.Cog):
         type=private.ProposalType)
     @discord.option("duration",
         description="Duration of the poll in hours (default: 48h)",
+        required=False,
         type=discord.SlashCommandOptionType.integer)
     @discord.option("secondary_author_1",
         description="The Discord account of a secondary author of the proposal",
