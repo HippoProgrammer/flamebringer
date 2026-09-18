@@ -8,7 +8,7 @@ import datetime # datetime handling
 import cogs.private as private
 from yaml import safe_load as load_yaml # yaml parsing
 
-__version__ = "1.7.0b3"
+__version__ = "1.7.0b4"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
