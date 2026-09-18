@@ -2,13 +2,13 @@
 # it provides various shared functions that act as the backend of bot commands
 
 import discord
-import logging
+from yaml import safe_load as load_yaml # yaml parsing
+from enum import Flag, nonmember, auto
+from math import ceil # ceiling function
+import datetime
+import logging, os, sys
 
-logger = logging.getLogger("flamebringer")  # get the logger for this script
-handler = logging.StreamHandler(stream=sys.stdout)  # set logs to be sent to stdout
-formatter = logging.Formatter("%(asctime)s - %(module)s - %(levelname)s - %(message)s") # format [time] - [module] - [error level] - [message]
-handler.setFormatter(formatter) # attach the formatter to the handler
-logger.addHandler(handler)  # attach the handler to the logger
+logger = logging.getLogger(__name__)  # get the logger for this script
 logger.setLevel(logging.INFO)
 
 # load config - this is now accessible at private.config
@@ -21,7 +21,7 @@ with open(config_file, "r") as file: # open the config file
     config = load_yaml(file) # parse it into a python object
 config = config["config"] # navigate into the first section - everything should be under this first key so we don't need to constantly reference it
 logger.info("Config loaded")
-logger.setLevel(private.config["log_verbosity"]) # better hope that the config provided a valid number as we do no validation on this at all
+logger.setLevel(config["log_verbosity"]) # better hope that the config provided a valid number as we do no validation on this at all
 
 # basic discord functions (calculate quorum, lock threads, set tags etc.)
 async def _get_quorum(ctx: discord.ApplicationContext): # get quorum based on a pre-configured role
@@ -148,7 +148,7 @@ async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
 
 async def _get_past_message_from_current_thread(ctx: discord.ApplicationContext, type: str) -> discord.Message | None:
-    async for message in ctx.channel.history(limit = 4, oldest_first = False): # seeing how this is only linked to count, and that is only run directly after a vote, it is safest to limit to 4
+    async for message in ctx.channel.history(limit = 8, oldest_first = False): # seeing how this is only linked to count, and that is only run directly after a vote, it is safest to limit this
         if message.author == ctx.guild.me: # if the message author is the same as the object representing the bot user in this guild
             if type == 'poll' and message.content == '' and message.poll is not None: # if we're looking for polls and we find a message with no text and a poll, authored by the bot
                 return message

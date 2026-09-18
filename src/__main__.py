@@ -7,10 +7,8 @@ import validators # string validation
 import datetime # datetime handling
 import cogs.private as private
 from yaml import safe_load as load_yaml # yaml parsing
-from math import ceil # ceiling function
-from enum import Flag, nonmember, auto
 
-__version__ = "1.7.0b3"
+__version__ = "1.7.0b4"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
@@ -41,7 +39,8 @@ logger.debug("Bot object created")
 # load cogs
 logger.info("Loading cogs...")
 cogs = [
-    "automatic.py"
+    "halls.py",
+    "config.py"
 ]
 for file in cogs: # for every file in the src directory
     logger.info(f"Loading {file}...")
@@ -73,11 +72,11 @@ async def on_application_command_error(ctx:discord.ApplicationContext, error:dis
 
 @bot.event
 async def on_thread_create(thread: discord.Thread): # ping the office when a new thread is created
-    if thread.parent == bot.get_channel(private.config[ctx.guild.id]["voting_forum_id"]): # in the correct channel
+    if thread.parent == bot.get_channel(private.config[thread.guild.id]["voting_forum_id"]): # in the correct channel
         if thread.can_send():
-            if thread.parent.get_tag(private.config[ctx.guild.id]["debate_tag_id"]) in thread.applied_tags:
+            if thread.parent.get_tag(private.config[thread.guild.id]["debate_tag_id"]) in thread.applied_tags:
                 embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
-                await thread.send(content=f"<@&{"> <@&".join(map(str, private.config[ctx.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
+                await thread.send(content=f"<@&{"> <@&".join(map(str, private.config[thread.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
                 logger.info("Debate ping sent")
             else:
                 embed = discord.Embed(title = "You have submitted your proposal!", description = "You may motion your proposal to debate at any time by modifying this thread's tags to 'In Debate'.")
@@ -86,12 +85,12 @@ async def on_thread_create(thread: discord.Thread): # ping the office when a new
 
 @bot.event
 async def on_thread_update(before: discord.Thread, after: discord.Thread): # ping the office when a new thread is created
-    if after.parent == bot.get_channel(private.config[ctx.guild.id]["voting_forum_id"]): # in the correct channel
+    if after.parent == bot.get_channel(private.config[after.guild.id]["voting_forum_id"]): # in the correct channel
         if after.can_send():
             if not before.applied_tags == after.applied_tags: # if a change has actually been made
-                if after.parent.get_tag(private.config[ctx.guild.id]["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(private.config[ctx.guild.id]["debate_tag_id"]) not in before.applied_tags:
+                if after.parent.get_tag(private.config[after.guild.id]["debate_tag_id"]) in after.applied_tags and after.parent.get_tag(private.config[after.guild.id]["debate_tag_id"]) not in before.applied_tags:
                     embed = discord.Embed(title = "You have submitted your proposal into debate!", description = "You may motion your proposal to vote no sooner than 48 hours after the Flamewarden (or deputy) acknowledges the proposal.")
-                    await after.send(content=f"<@&{"> <@&".join(map(str, private.config[ctx.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
+                    await after.send(content=f"<@&{"> <@&".join(map(str, private.config[after.guild.id]["fw_announcement_role_ids"]))}>", embed=embed)
                     logger.info("Debate ping sent")
 
 bot.run(token)
