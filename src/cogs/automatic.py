@@ -194,6 +194,7 @@ class Automatic(discord.Cog):
             logger.info("User is authenticated")
             conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(private.config[ctx.guild.id]["debate_min_duration"]))
             embed = discord.Embed(title = "Debate period acknowledged", description = f"The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f> (<t:{int(round(conclusion.timestamp(),0))}:R>), after which the proposal may be motioned to vote by any author.")
+            await private._set_tag(ctx=ctx, tag="debate")
             await ctx.respond(embed = embed)
         else:
             logger.info("User is not authenticated")
