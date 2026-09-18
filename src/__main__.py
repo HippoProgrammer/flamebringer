@@ -8,7 +8,7 @@ import datetime # datetime handling
 import cogs.private as private
 from yaml import safe_load as load_yaml # yaml parsing
 
-__version__ = "1.7.0b3"
+__version__ = "1.7.0b4"
 
 # configure logging
 logger = logging.getLogger("flamebringer")  # get the logger for this script
@@ -39,8 +39,7 @@ logger.debug("Bot object created")
 # load cogs
 logger.info("Loading cogs...")
 cogs = [
-    "automatic.py",
-    "manual.py",
+    "halls.py",
     "config.py"
 ]
 for file in cogs: # for every file in the src directory

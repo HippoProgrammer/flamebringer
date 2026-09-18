@@ -7,13 +7,14 @@ import logging, sys
 logger = logging.getLogger(__name__)  # get the logger for this script
 logger.setLevel(logging.INFO)
 
-class Automatic(discord.Cog):
+class Halls(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     halls = discord.SlashCommandGroup("halls", "Commands relating to the Halls of Solaris")
+    office = halls.create_subgroup("office", "Commands pertaining to the Office's management of the Halls")
 
-    @halls.command(
+    @office.command(
         name="vote",
         description="Prepare a vote")
     @discord.option("name",
@@ -30,6 +31,7 @@ class Automatic(discord.Cog):
         type=private.ProposalType)
     @discord.option("duration",
         description="Duration of the poll in hours (default: 48h)",
+        required=False,
         type=discord.SlashCommandOptionType.integer)
     @discord.option("secondary_author_1",
         description="The Discord account of a secondary author of the proposal",
@@ -99,7 +101,7 @@ class Automatic(discord.Cog):
             await ctx.respond(embed = embed, ephemeral = True)
             logger.info("Wrong channel type embed sent")
 
-    @halls.command(
+    @office.command(
         name="count",
         description="Edit the vote status when the vote ends")
     @discord.option("name",
@@ -185,7 +187,7 @@ class Automatic(discord.Cog):
             await ctx.respond(embed = embed, ephemeral = True)
             logger.info("Wrong channel type embed sent")
 
-    @halls.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
+    @office.command(name="acknowledge", description="Acknowledge the beginning of the debate period")
     async def acknowledge(self, ctx: discord.ApplicationContext):
         logger.info(f"Acknowledge command sent by {ctx.user.id}")
         permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
@@ -193,6 +195,7 @@ class Automatic(discord.Cog):
             logger.info("User is authenticated")
             conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(private.config[ctx.guild.id]["debate_min_duration"]))
             embed = discord.Embed(title = "Debate period acknowledged", description = f"The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f> (<t:{int(round(conclusion.timestamp(),0))}:R>), after which the proposal may be motioned to vote by any author.")
+            await private._set_tag(ctx=ctx, tag="debate")
             await ctx.respond(embed = embed)
         else:
             logger.info("User is not authenticated")
@@ -264,5 +267,72 @@ class Automatic(discord.Cog):
             await ctx.respond(embed = embed, ephemeral = True)
             logger.info("Wrong channel type embed sent")
 
+    manual = halls.create_subgroup("manual", "Commands allowing manual operation of the bot")
+    @manual.command(name="poll",
+        description="Send a vote poll")
+    @discord.option("name",
+        description="The name of the proposal going to vote",
+        type=discord.SlashCommandOptionType.string)
+    @discord.option("type",
+        description="The type of the proposal",
+        type=private.ProposalType)
+    @discord.option("duration",
+        description="Duration of the poll in hours (default 48h)",
+        type=discord.SlashCommandOptionType.integer,
+        required=False)
+    async def poll(self, ctx: discord.ApplicationContext, name: str, type: private.ProposalType, duration: int):
+        logger.info(f"Manual poll command sent by {ctx.user.id}")
+
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
+        if permitted:
+            logger.info("User is authenticated")
+            if duration is None:
+                duration = private.config[ctx.guild.id]["poll_durations"]["default"]
+            if duration >= private.config[ctx.guild.id]["poll_durations"]["min"] and duration <= private.config[ctx.guild.id]["poll_durations"]["max"]: # if duration between max and min
+                await ctx.defer(ephemeral=True)
+                await private._create_vote_poll(ctx=ctx, name=name, type=type, duration=duration)
+                embed = discord.Embed(title = "Success", description = "The command succeeded.")
+                await ctx.respond(embed = embed, ephemeral=True)
+            else:
+                logger.info("Poll duration out of bounds")
+
+                embed = discord.Embed(title = "Invalid poll duration", description = f"Polls must be between {private.config[ctx.guild.id]["poll_durations"]["min"]} and {private.config[ctx.guild.id]["poll_durations"]["max"]} hours long.")
+                logger.debug("Embed object created")
+
+                await ctx.respond(embed = embed, ephemeral = True)
+                logger.info("Invalid duration embed sent")
+        else:
+            logger.info("User is not authenticated")
+
+            embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+            logger.debug("Embed object created")
+
+            await ctx.respond(embed = embed, ephemeral = True)
+            logger.info("No permissions embed sent")
+
+    @manual.command(name="image", description="Send an official header or footer image")
+    @discord.option("type",
+        description="Which image should be provided?",
+        type=discord.SlashCommandOptionType.string,
+        choices=["header", "footer"])
+    async def image(self, ctx: discord.ApplicationContext, type: str):
+        logger.info(f"Manual image command sent by {ctx.user.id}")
+
+        permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
+        if permitted:
+            logger.info("User is authenticated")
+            await ctx.defer(ephemeral=True)
+            await private._send_image(ctx=ctx, type=type)
+            embed = discord.Embed(title = "Success", description = "The command succeeded.")
+            await ctx.respond(embed = embed, ephemeral=True)
+        else:
+            logger.info("User is not authenticated")
+
+            embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+            logger.debug("Embed object created")
+
+            await ctx.respond(embed = embed, ephemeral = True)
+            logger.info("No permissions embed sent")
+
 def setup(bot):
-    bot.add_cog(Automatic(bot))
+    bot.add_cog(Halls(bot))
