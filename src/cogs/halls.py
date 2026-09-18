@@ -14,7 +14,6 @@ class Halls(discord.Cog):
     halls = discord.SlashCommandGroup("halls", "Commands relating to the Halls of Solaris")
     office = halls.create_subgroup("office", "Commands pertaining to the Office's management of the Halls")
 
-
     @office.command(
         name="vote",
         description="Prepare a vote")
