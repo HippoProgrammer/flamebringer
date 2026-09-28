@@ -119,7 +119,8 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, type: Pr
             fw_approval = f"**{the_name.title()} has passed the Halls of Solaris and has been approved by the Triune Circle. As of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is now formally ratified.**"
         elif type is ProposalType.constitutional:
             fw_approval = f"**{the_name.title()} has passed the Halls of Solaris and has been approved by the Triune Circle. As of <t:{int(round(datetime.datetime.now().timestamp(),0))}:f> it is now formally adopted into the Constitution.**"
-        # ProposalType.honorary does not require fw_approval
+        elif type is ProposalType.honorary:
+            fw_approval = f"**{the_name.title()} has passed the Halls of Solaris and has been approved by the Triune Circle. As of <t:{int(round(datetime.datetime.now().timestamp(),0))}:D> the nominee holds the specified Honorary Title."
         await _set_tag(ctx=ctx, tag="passed") # as these do not get passed until TC approval is given, we wait until this command
     else:
         status = "rejected"
@@ -131,24 +132,16 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, type: Pr
             await _set_thread_lock(ctx=ctx, lock=False)
             await _set_tag(ctx=ctx, tag="vote") # if a motion can be made, its more voting than anything else
 
-    if type is ProposalType.honorary:
-        if abstain > 0:
-            tc_approval = f"**The Triune Circle has approved the {the_name.title()} with {abstain} abstention, effective <t:{int(round(datetime.datetime.now().timestamp(),0))}:D>.**"
-        else:
-            tc_approval = f"**The Triune Circle has approved the {the_name.title()}, effective <t:{int(round(datetime.datetime.now().timestamp(),0))}:D>.**"
+    if abstain > 0:
+        tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay})."
     else:
-        if abstain > 0:
-            tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay})."
-        else:
-            tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay}-{abstain})."
+        tc_approval = f"**{the_name.title()}** has been **{status}** by the Triune Circle ({aye}-{nay}-{abstain})."
 
     for id in config[ctx.guild.id]["fw_announcement_role_ids"]:
         tc_approval = f"<@&{id}> " + tc_approval # append a ping of every role in fw_announcement_role_ids to the beginning of the tc_approval string
 
     await ctx.channel.send(content=tc_approval)
-
-    if type is ProposalType.constitutional or type is ProposalType.treaty:
-        await ctx.channel.send(content=fw_approval)
+    await ctx.channel.send(content=fw_approval)
 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
@@ -180,17 +173,24 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
         if type == ProposalType.constitutional:
             if aye_percent > type.voting_threshold:
                 passed = "APPROVED"
-                sanction = f"**{the_name.title()} has passed the Halls of Solaris, meeting the required two-thirds majority.\nThe amendment is submitted to the <@&{config['tc_permission_role_id']}> who has now 72 hours to formally approve or veto it. Once approval is granted or if no action is taken within that timeframe, it will become law.**"
+                sanction = f"**{the_name.title()} has passed the Halls of Solaris. The amendment is now submitted to the <@&{config['tc_permission_role_id']}> who has must formally approve or veto it within the next 72 hours. If no action is taken within that timeframe, it will be implicitly approved..**"
             else:
                 passed = "REJECTED"
                 sanction = f"**{the_name.title()} has failed to achieve the required two-thirds majority and therefore does not pass the Halls of Solaris.**"
         elif type == ProposalType.treaty:
             if aye_percent > type.voting_threshold:
                 passed = "APPROVED"
-                sanction = f"**{the_name.title()} has been approved by the Halls of Solaris. <@&{config['tc_permission_role_id']}>**"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris. The treaty is now submitted to the <@&{config['tc_permission_role_id']}> who must now formally approve or veto it.**"
             else:
                 passed = "REJECTED"
-                sanction = f"**{the_name.title()} has been rejected by the Halls of Solaris.**"
+                sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
+        elif type == ProposalType.honorary:
+            if aye_percent > type.voting_threshold:
+                passed = "PASSED"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris. The nomination is now submitted to the <@&{config['tc_permission_role_id']}> who must now formally approve or veto it.**"
+            else:
+                passed = "FAILED"
+                sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
         else:
             if aye_percent > type.voting_threshold:
                 passed = "PASSED"
@@ -218,6 +218,9 @@ async def _send_vote_text(ctx: discord.ApplicationContext, name: str, authors: l
     elif type is ProposalType.treaty:
         header = f"## VOTING: {the_name.upper()} (TREATY)\n{the_name.title()} by {await _format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE TREATY]({link})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the signing of the treaty\n\n- **Nay** – Opposed to the signing of the treaty\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
+    elif type is ProposalType.honorary:
+        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by {await _format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE NOMINATION]({link})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the nomination\n\n- **Nay** – Opposed to the nomination\n\n- **Abstain** - Neither in favor nor opposed\n"
+        majority = "50"
     else:
         header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by {await _format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE BILL]({link})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the bill\n\n- **Nay** – Opposed to the bill\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
