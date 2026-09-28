@@ -123,7 +123,7 @@ async def _send_tc_approval(ctx: discord.ApplicationContext, name: str, type: Pr
         await _set_tag(ctx=ctx, tag="passed") # as these do not get passed until TC approval is given, we wait until this command
     else:
         status = "rejected"
-        if treaty:
+        if type is ProposalType.treaty:
             fw_approval = f"**{the_name.title()} has been vetoed by the Triune Circle.**"
             await _set_tag(ctx=ctx, tag="failed")
         else:
