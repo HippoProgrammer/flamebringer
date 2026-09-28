@@ -185,6 +185,13 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
             else:
                 passed = "REJECTED"
                 sanction = f"**{the_name.title()} has been rejected by the Halls of Solaris.**"
+        elif type == ProposalType.honorary:
+            if aye_percent > type.voting_threshold:
+                passed = "PASSED"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris and the awarding of the Honorary Title has been approved."
+            else:
+                passed = "FAILED"
+                sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris."
         else:
             if aye_percent > type.voting_threshold:
                 passed = "PASSED"
@@ -212,6 +219,9 @@ async def _send_vote_text(ctx: discord.ApplicationContext, name: str, authors: l
     elif type is ProposalType.treaty:
         header = f"## VOTING: {the_name.upper()} (TREATY)\n{the_name.title()} by {await _format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE TREATY]({link})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the signing of the treaty\n\n- **Nay** – Opposed to the signing of the treaty\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
+    elif type is ProposalType.honorary:
+        header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by {await _format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE NOMINATION]({link})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the nomination\n\n- **Nay** – Opposed to the nomination\n\n- **Abstain** - Neither in favor nor opposed\n"
+        majority = "50"
     else:
         header = f"## VOTING: {the_name.upper()}\n{the_name.title()} by {await _format_member_list(authors)} is now at vote.\n\n**__Proposal__**:\n[LINK TO THE BILL]({link})\n\nAll Starborn are eligible to vote by selecting one of the following options in the poll:\n\n- **Aye** – In favor of the bill\n\n- **Nay** – Opposed to the bill\n\n- **Abstain** - Neither in favor nor opposed\n"
         majority = "60"
