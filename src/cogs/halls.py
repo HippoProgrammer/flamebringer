@@ -194,7 +194,8 @@ class Halls(discord.Cog):
         if permitted:
             logger.info("User is authenticated")
             conclusion = datetime.datetime.now() + datetime.timedelta(hours=int(private.config[ctx.guild.id]["debate_min_duration"]))
-            embed = discord.Embed(title = "Debate period acknowledged", description = f"The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f> (<t:{int(round(conclusion.timestamp(),0))}:R>), after which the proposal may be motioned to vote by any author.")
+            embed = discord.Embed(title = "Motion to debate acknowledged", description = f"The Office of the Flamewarden acknowledges the motion. The debate period has begun and will conclude at <t:{int(round(conclusion.timestamp(),0))}:f> (<t:{int(round(conclusion.timestamp(),0))}:R>), after which the proposal may be motioned to vote by the author(s).")
+            embed.set_footer(text = f"The motion was acknowledged by {ctx.author.display_name}.")
             await private._set_tag(ctx=ctx, tag="debate")
             await ctx.respond(embed = embed)
         else:
