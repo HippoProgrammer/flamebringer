@@ -90,7 +90,13 @@ async def _format_member_list(members: list[discord.Member]):
 # command backend functions
 # halls commands
 async def _send_lock_message(ctx: discord.ApplicationContext):
-    await ctx.channel.send(f"<@&{config[ctx.guild.id]['fw_primary_role_id']}> **The Office of the Flamewarden acknowledges the motion and second(s) and shall promptly schedule a vote.**")
+    embed = discord.Embed(title = "Motions to vote acknowledged", description = "The Office of the Flamewarden acknowledges the motion and seconds. The vote shall be scheduled shortly.")
+    embed.set_footer(text = f"The motion was acknowledged by {ctx.author.display_name}.")
+    if ctx.guild.get_role(config[ctx.guild.id]['fw_primary_role_id']) not in ctx.author.roles:
+        content = f"<@&{config[ctx.guild.id]['fw_primary_role_id']}>"
+    else:
+        content = ""
+    await ctx.channel.send(content = content, embed = embed)
 
 async def _send_vote_status(ctx: discord.ApplicationContext):
     await ctx.channel.send("## __STATUS__: AT VOTE")
