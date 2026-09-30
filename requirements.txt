@@ -1,3 +1,4 @@
 py-cord[speed]==2.8.1 # Discord API wrapper
+psycopg[binary,pool]==3.3.4 # Postgres connector
 PyYAML==6.0.3
 validators==0.35.0
