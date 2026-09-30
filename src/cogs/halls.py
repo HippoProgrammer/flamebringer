@@ -15,6 +15,73 @@ class Halls(discord.Cog):
     office = halls.create_subgroup("office", "Commands pertaining to the Office's management of the Halls")
 
     @office.command(
+        name="register",
+        description="Register a proposal to the bot"
+    )
+    @discord.option("name",
+        description="The name of the proposal going to vote",
+        type=discord.SlashCommandOptionType.string)
+    @discord.option("primary_author",
+        description="The Discord account of the primary author of the proposal",
+        type=discord.SlashCommandOptionType.user)
+    @discord.option("link",
+        description="A link to the text of the proposal",
+        type=discord.SlashCommandOptionType.string)
+    @discord.option("type",
+        description="The type of the proposal",
+        type=private.ProposalType)
+    @discord.option("secondary_author_1",
+        description="The Discord account of a secondary author of the proposal",
+        required=False,
+        type=discord.SlashCommandOptionType.user)
+    @discord.option("secondary_author_2",
+        description="The Discord account of another secondary author of the proposal",
+        required=False,
+        type=discord.SlashCommandOptionType.user)
+    @discord.option(
+        "secondary_author_3",
+        description="The Discord account of a third secondary author of the proposal",
+        required=False,
+        type=discord.SlashCommandOptionType.user)
+    async def register(self, ctx: discord.ApplicationContext, name: str, primary_author: discord.Member, link: str, type: private.ProposalType, secondary_author_1: discord.Member, secondary_author_2: discord.Member, secondary_author_3: discord.Member):
+        logger.info(f"Register command sent by {ctx.user.id}")
+        authors = [author for author in [primary_author, secondary_author_1, secondary_author_2, secondary_author_3] if author is not None]
+        if isinstance(ctx.channel, discord.threads.Thread):
+            permitted = any(ctx.user.get_role(rid) for rid in map(int, private.config[ctx.guild.id]["fw_permission_role_ids"]))
+            if permitted:
+                logger.info("User is authenticated")
+                if validators.url(link):
+                    # here we will call a cogs.private function that registers the information to the database
+
+                    embed = discord.Embed(title = "Proposal acknowledged and registered", description = "The Office of the Flamewarden acknowledges the proposal and has registered it.")
+                    embed.set_footer(text = f"The proposal was acknowledged by {ctx.author.display_name}.")
+                    await ctx.respond(embed = embed)
+                else:
+                    logger.info("Invalid URL provided: valid URL must be provided")
+
+                    embed = discord.Embed(title = "Invalid URL", description = "The link provided is not a valid URL.")
+                    logger.debug("Embed object created")
+
+                    await ctx.respond(embed = embed, ephemeral = True)
+                    logger.info("Invalid URL embed sent")
+            else:
+                logger.info("User is not authenticated")
+
+                embed = discord.Embed(title = "No Permissions", description = "You do not have the required permissions to run this command.")
+                logger.debug("Embed object created")
+
+                await ctx.respond(embed = embed, ephemeral = True)
+                logger.info("No permissions embed sent")
+        else:
+            logger.info("Command is not in a thread channel")
+
+            embed = discord.Embed(title = "Wrong Channel Type", description = "Halls commands must be run in a thread.")
+            logger.debug("Embed object created")
+
+            await ctx.respond(embed = embed, ephemeral = True)
+            logger.info("Wrong channel type embed sent")
+
+    @office.command(
         name="vote",
         description="Prepare a vote")
     @discord.option("name",
