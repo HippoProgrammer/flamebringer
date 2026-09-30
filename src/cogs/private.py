@@ -68,6 +68,14 @@ class ProposalType(Flag):
     def is_approvable(self):
         return (self in ProposalType.approvables)
 
+class ProposalState(Flag):
+    draft = auto()
+    debate = auto()
+    vote = auto()
+    passed = auto()
+    failed = auto()
+    repealed = auto()
+
 async def _format_definite_article(name: str): # format a name to have correct definite article (the)
     if "the" in name.lower() or name.split(' ')[0].lower() == 'repeal': # if 'the' is in the name
         the_name = name # the name should be "the [x]"

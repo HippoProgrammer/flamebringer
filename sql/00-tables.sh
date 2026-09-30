@@ -2,7 +2,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     \c flamebringer
 
     CREATE TYPE PROPOSALTYPE AS ENUM ('legislative', 'constitutional', 'honorary', 'holiday', 'treaty');
-    CREATE TYPE PROPOSALSTATE AS ENUM ('draft', 'debate', 'vote', 'passed', 'failed');
+    CREATE TYPE PROPOSALSTATE AS ENUM ('draft', 'debate', 'vote', 'passed', 'failed', 'repealed');
 
     CREATE TABLE IF NOT EXISTS Halls (
     Ref SERIAL PRIMARY KEY,
@@ -11,7 +11,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     Thread BIGINT NOT NULL,
     Type PROPOSALTYPE NOT NULL,
     State PROPOSALSTATE NOT NULL,
-    ID INT,
+    ID TEXT CHECK UNIQUE,
     Results INT ARRAY
     );
 EOSQL
