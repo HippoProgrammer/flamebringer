@@ -108,6 +108,11 @@ class FlamebringerDB:
             query = "SELECT 1 FROM Halls WHERE ID = %s;",
             params = (id)
         )
+    async def get_proposal_by_thread(self, thread: int) -> list:
+        return await self._query(
+            query = "SELECT 1 FROM Halls WHERE Thread = %s;",
+            params = (thread)
+        )
     async def delete_proposal_by_ref(self, ref: int) -> bool:
         return bool(await self._query(
             query = "DELETE FROM Halls WHERE Ref = %s;",
