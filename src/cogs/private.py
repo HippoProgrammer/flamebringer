@@ -173,21 +173,21 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
         if type == ProposalType.constitutional:
             if aye_percent > type.voting_threshold:
                 passed = "APPROVED"
-                sanction = f"**{the_name.title()} has passed the Halls of Solaris. The amendment is now submitted to the <@&{config['tc_permission_role_id']}> who has must formally approve or veto it within the next 72 hours. If no action is taken within that timeframe, it will be implicitly approved..**"
+                sanction = f"**{the_name.title()} has passed the Halls of Solaris. The amendment is now submitted to the <@&{config[ctx.guild.id]['tc_permission_role_id']}> who has must formally approve or veto it within the next 72 hours. If no action is taken within that timeframe, it will be implicitly approved..**"
             else:
                 passed = "REJECTED"
                 sanction = f"**{the_name.title()} has failed to achieve the required two-thirds majority and therefore does not pass the Halls of Solaris.**"
         elif type == ProposalType.treaty:
             if aye_percent > type.voting_threshold:
                 passed = "APPROVED"
-                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris. The treaty is now submitted to the <@&{config['tc_permission_role_id']}> who must now formally approve or veto it.**"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris. The treaty is now submitted to the <@&{config[ctx.guild.id]['tc_permission_role_id']}> who must now formally approve or veto it.**"
             else:
                 passed = "REJECTED"
                 sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
         elif type == ProposalType.honorary:
             if aye_percent > type.voting_threshold:
                 passed = "PASSED"
-                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris. The nomination is now submitted to the <@&{config['tc_permission_role_id']}> who must now formally approve or veto it.**"
+                sanction = f"**{the_name.title()} has been passed by the Halls of Solaris. The nomination is now submitted to the <@&{config[ctx.guild.id]['tc_permission_role_id']}> who must now formally approve or veto it.**"
             else:
                 passed = "FAILED"
                 sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
@@ -200,7 +200,7 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
                 sanction = f"**{the_name.title()} has failed to achieve the required majority and therefore does not pass the Halls of Solaris.**"
     else:
         passed = f"FAILED TO REACH QUORUM\n*The quorum for this vote was {quorum}, but only {quorum_total} Starborn participated.*"
-        sanction = f"**{the_name.title()} has failed to reach quorum and therefore does not pass the Halls of Solaris. The Flamewarden may reopen debate or extend the voting period.**"
+        sanction = f"**{the_name.title()} has failed to reach quorum and therefore does not pass the Halls of Solaris. The <@&{config[ctx.guild.id]["fw_primary_role_id"]} may reopen debate or extend the voting period.**"
     status = f"## __STATUS__: {passed}\n\n- Aye: {aye}\n- Nay: {nay}\n- Abstain: {abstain}\n\nTotal votes cast: {vote_total}\n\nAye = {round(aye_percent * 100, 1)}%"
     await status_msg.edit(content=status)
     await ctx.channel.send(content=sanction)
