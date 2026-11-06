@@ -159,9 +159,10 @@ async def _edit_vote_status_with_count_and_sanction(ctx: discord.ApplicationCont
     the_name = await _format_definite_article(name=name)
 
     poll = poll_msg.poll
-    aye = [answer for answer in poll.answers if answer.text == "Aye"][0].count
-    nay = [answer for answer in poll.answers if answer.text == "Nay"][0].count
-    abstain = [answer for answer in poll.answers if answer.text == "Abstain"][0].count
+    aye = len([user for user in await [answer for answer in poll.answers if answer.text == "Aye"][0].users().flatten() if ctx.guild.get_role(config[ctx.guild.id]["quorum_role_id"]) in user.roles])
+    nay = len([user for user in await [answer for answer in poll.answers if answer.text == "Nay"][0].users().flatten() if ctx.guild.get_role(config[ctx.guild.id]["quorum_role_id"]) in user.roles])
+    abstain = len([user for user in await [answer for answer in poll.answers if answer.text == "Abstain"][0].users().flatten() if ctx.guild.get_role(config[ctx.guild.id]["quorum_role_id"]) in user.roles])
+
     vote_total = aye + nay
     quorum_total = aye + nay + abstain
     if vote_total > 0: # check for div/0 errors!
